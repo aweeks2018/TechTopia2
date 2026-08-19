@@ -15,6 +15,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
@@ -84,24 +85,33 @@ public final class TechTopia2
         if (event.getItemStack().is(GUARD_POST_ITEM.get())
             && GuardPostValidator.INSTANCE.isValid(player.level(), frame))
         {
-            player.sendSystemMessage(Component.literal("Guard Post recognized."));
+            registerBuilding(player, frame, "guard_post", "Guard Post");
         }
         else if (event.getItemStack().is(TECH_ITEM.get())
             && TownHallValidator.INSTANCE.isValid(player.level(), frame))
         {
-            player.sendSystemMessage(Component.literal("Town Hall recognized."));
+            VillageData villageData = getVillageData((ServerLevel) player.level());
+            if (villageData.registerTownHall(frame.blockPosition()))
+            {
+                player.sendSystemMessage(Component.literal(
+                    "Town Hall recognized. A new village was registered with a "
+                        + VillageData.VILLAGE_RADIUS + "-block radius."));
+            }
+            else
+            {
+                player.sendSystemMessage(Component.literal(
+                        "Town Hall recognized. It is already inside a registered village."));
+            }
         }
         else if (event.getItemStack().is(BARRACKS_ITEM.get())
             && BarracksValidator.INSTANCE.isValid(player.level(), frame))
         {
-            player.sendSystemMessage(Component.literal(
-                    "Barracks structure recognized."));
+            registerBuilding(player, frame, "barracks", "Barracks");
         }
         else if (event.getItemStack().is(BUTCHER_ITEM.get())
             && ButcherValidator.INSTANCE.isValid(player.level(), frame))
         {
-            player.sendSystemMessage(Component.literal(
-                    "Butcher structure recognized."));
+            registerBuilding(player, frame, "butcher", "Butcher");
         }
         else if (event.getItemStack().is(BARRACKS_ITEM.get()))
         {
@@ -118,6 +128,26 @@ public final class TechTopia2
             player.sendSystemMessage(Component.literal(
                     "Town Hall needs 4 floor spaces, a 2-30 block height, a roof, and a door."));
         }
+    }
+
+    private void registerBuilding(Player player, ItemFrame frame, String type, String displayName)
+    {
+        VillageData villageData = getVillageData((ServerLevel) player.level());
+        if (villageData.registerBuilding(frame.blockPosition(), type))
+        {
+            player.sendSystemMessage(Component.literal(displayName + " structure registered to the village."));
+        }
+        else
+        {
+            player.sendSystemMessage(Component.literal(
+                    displayName + " is valid, but it is outside the "
+                        + VillageData.VILLAGE_RADIUS + "-block radius of a Town Hall."));
+        }
+    }
+
+    private VillageData getVillageData(ServerLevel level)
+    {
+        return level.getServer().getDataStorage().computeIfAbsent(VillageData.TYPE);
     }
 
     private boolean isStructureItem(ItemStack stack)
