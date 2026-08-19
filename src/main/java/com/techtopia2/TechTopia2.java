@@ -10,6 +10,8 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.network.chat.Component;
@@ -34,7 +36,7 @@ public final class TechTopia2
 
     public static final DeferredBlock<Block> TECH_BLOCK = BLOCKS.registerSimpleBlock(
             "tech_block",
-            BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(3.0F, 6.0F));
+            () -> BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(3.0F, 6.0F));
     public static final DeferredItem<Item> TECH_ITEM = ITEMS.registerSimpleItem("tech_item");
     public static final DeferredItem<Item> BARRACKS_ITEM = ITEMS.registerSimpleItem("barracks");
     public static final DeferredItem<Item> BUTCHER_ITEM = ITEMS.registerSimpleItem("butcher");
@@ -42,7 +44,9 @@ public final class TechTopia2
 
     static
     {
-        ITEMS.register("tech_block", () -> new BlockItem(TECH_BLOCK.get(), new Item.Properties()));
+        ITEMS.register("tech_block", key -> new BlockItem(
+                TECH_BLOCK.get(),
+            new Item.Properties().setId(ResourceKey.create(Registries.ITEM, key))));
     }
 
     public TechTopia2(IEventBus modEventBus)
@@ -91,26 +95,28 @@ public final class TechTopia2
             && BarracksValidator.INSTANCE.isValid(player.level(), frame))
         {
             player.sendSystemMessage(Component.literal(
-                    "Barracks room found. Bed and armor stand checks are not implemented yet."));
+                    "Barracks structure recognized."));
         }
         else if (event.getItemStack().is(BUTCHER_ITEM.get())
             && ButcherValidator.INSTANCE.isValid(player.level(), frame))
         {
             player.sendSystemMessage(Component.literal(
-                    "Butcher room found. The 8-floor-space check is not implemented yet."));
+                    "Butcher structure recognized."));
         }
         else if (event.getItemStack().is(BARRACKS_ITEM.get()))
         {
-            player.sendSystemMessage(Component.literal("Barracks needs an enclosed room."));
+                player.sendSystemMessage(Component.literal(
+                    "Barracks needs 4 floor spaces, a 2-30 block height, a roof, and a door."));
         }
         else if (event.getItemStack().is(BUTCHER_ITEM.get()))
         {
-            player.sendSystemMessage(Component.literal("Butcher needs an enclosed room."));
+                player.sendSystemMessage(Component.literal(
+                    "Butcher needs 4 floor spaces, a 2-30 block height, a roof, and a door."));
         }
         else
         {
             player.sendSystemMessage(Component.literal(
-                    "Town Hall needs an enclosed room with at least 3x3x3 blocks of open air behind it."));
+                    "Town Hall needs 4 floor spaces, a 2-30 block height, a roof, and a door."));
         }
     }
 

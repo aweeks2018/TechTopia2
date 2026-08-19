@@ -1,5 +1,6 @@
 .gradle/
 build/
+run/
 runs/
 src/generated/
 out/
@@ -9,6 +10,9 @@ hs_err_pid*.log
 replay_*.log
 *.iml
 .idea/
+.classpath
+.project
+.settings/
 .vscode/*.code-workspace
 local.properties
 *.local

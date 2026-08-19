@@ -6,6 +6,6 @@ public final class TownHallValidator extends RoomValidator
 
     private TownHallValidator()
     {
-        super(3, 3, 3, 30);
+        super(4, 2, 30, 30);
     }
 }

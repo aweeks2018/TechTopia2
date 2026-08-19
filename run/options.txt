@@ -87,7 +87,7 @@ notificationDisplayTime:1.0
 useNativeTransport:true
 mainHand:"right"
 attackIndicator:1
-tutorialStep:movement
+tutorialStep:none
 mouseWheelSensitivity:1.0
 rawMouseInput:true
 allowCursorChanges:true
@@ -104,7 +104,7 @@ onlyShowSecureChat:false
 saveChatDrafts:false
 panoramaScrollSpeed:1.0
 telemetryOptInExtra:false
-onboardAccessibility:true
+onboardAccessibility:false
 menuBackgroundBlurriness:5
 startedCleanly:true
 musicToast:"never"
@@ -117,8 +117,8 @@ key_key.back:key.keyboard.s
 key_key.right:key.keyboard.d
 key_key.jump:key.keyboard.space
 key_key.sneak:key.keyboard.left.shift
-key_key.sprint:key.keyboard.left.control
-key_key.drop:key.keyboard.q
+key_key.sprint:key.keyboard.q
+key_key.drop:key.keyboard.r
 key_key.inventory:key.keyboard.e
 key_key.chat:key.keyboard.t
 key_key.playerlist:key.keyboard.tab
@@ -170,7 +170,7 @@ key_key.debug.profilingChart:key.keyboard.1
 key_key.debug.fpsCharts:key.keyboard.2
 key_key.debug.networkCharts:key.keyboard.3
 key_key.debug.lightmapTexture:key.keyboard.4
-soundCategory_master:1.0
+soundCategory_master:0.0
 soundCategory_music:1.0
 soundCategory_record:1.0
 soundCategory_weather:1.0

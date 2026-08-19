@@ -6,6 +6,6 @@ public final class BarracksValidator extends RoomValidator
 
     private BarracksValidator()
     {
-        super(3, 3, 3, 30);
+        super(4, 2, 30, 30);
     }
 }
