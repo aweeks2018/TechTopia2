@@ -14,6 +14,8 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.MobCategory;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Block;
@@ -23,6 +25,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.registries.DeferredBlock;
+import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
@@ -34,6 +37,7 @@ public final class TechTopia2
     public static final Logger LOGGER = LogUtils.getLogger();
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(MOD_ID);
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MOD_ID);
+    public static final DeferredRegister.Entities ENTITIES = DeferredRegister.createEntities(MOD_ID);
 
     public static final DeferredBlock<Block> TECH_BLOCK = BLOCKS.registerSimpleBlock(
             "tech_block",
@@ -42,6 +46,12 @@ public final class TechTopia2
     public static final DeferredItem<Item> BARRACKS_ITEM = ITEMS.registerSimpleItem("barracks");
     public static final DeferredItem<Item> BUTCHER_ITEM = ITEMS.registerSimpleItem("butcher");
     public static final DeferredItem<Item> GUARD_POST_ITEM = ITEMS.registerSimpleItem("guard_post");
+        public static final DeferredHolder<EntityType<?>, EntityType<MaleNomadEntity>> MALE_NOMAD =
+            ENTITIES.registerEntityType("male_nomad", MaleNomadEntity::new, MobCategory.CREATURE, builder ->
+                builder.sized(0.6F, 1.8F));
+        public static final DeferredHolder<EntityType<?>, EntityType<FemaleNomadEntity>> FEMALE_NOMAD =
+            ENTITIES.registerEntityType("female_nomad", FemaleNomadEntity::new, MobCategory.CREATURE, builder ->
+                builder.sized(0.6F, 1.8F));
 
     static
     {
@@ -54,9 +64,17 @@ public final class TechTopia2
     {
         BLOCKS.register(modEventBus);
         ITEMS.register(modEventBus);
+        ENTITIES.register(modEventBus);
         modEventBus.addListener(this::addCreative);
+        modEventBus.addListener(this::createAttributes);
         NeoForge.EVENT_BUS.register(this);
         LOGGER.info("TechTopia2 loaded");
+    }
+
+    private void createAttributes(net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent event)
+    {
+        event.put(MALE_NOMAD.get(), NomadEntity.createAttributes().build());
+        event.put(FEMALE_NOMAD.get(), NomadEntity.createAttributes().build());
     }
 
     private void addCreative(BuildCreativeModeTabContentsEvent event)
