@@ -22,3 +22,4 @@ repo/
 libs/
 run/options.txt
 run/usercache.json
+.vscode/launch.json
