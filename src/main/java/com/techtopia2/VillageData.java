@@ -12,6 +12,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.decoration.ItemFrame;
@@ -181,11 +182,24 @@ public final class VillageData extends SavedData
 
         Player player = event.getEntity();
         Village target = village.get();
-        if (target.buildings().stream().anyMatch(building -> building.position().equals(position)))
+
+        for (Building building : target.buildings())
         {
-            LOGGER.debug("registerBuilding......stream()");
-            return true;
+            if (building.position.equals(position))
+            {
+                ItemStack item = player.getItemInHand(InteractionHand.MAIN_HAND);
+                if (!item.isEmpty() && techTopia2.isStructureItem(item) && techTopia2.structureType(item) == building.type )
+                {
+                    player.sendSystemMessage(Component.literal("Original building type marker restored, no new building registered"));
+                }
+                else
+                {
+                    player.sendSystemMessage(Component.literal("This building is alreayd registered as a " + building.type + " building. \nIf you want to unregister it, place the original item in the item frame \nand right click the item frame with a stick. "));
+                }
+                return false;
+            }
         }
+
         Building buildingToAdd = new Building(position, type);
         target.buildings().add(buildingToAdd);
 

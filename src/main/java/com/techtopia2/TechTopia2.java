@@ -203,7 +203,7 @@ public final class TechTopia2
                   && BarracksValidator.INSTANCE.isValid(player.level(), frame)) ||
                  (event.getItemStack().is(BUTCHER_ITEM.get())
                   && ButcherValidator.INSTANCE.isValid(player.level(), frame)) ||
-                 (isSimpleMarkerItem(event.getItemStack())
+                 (event.getItemStack().is(GUARD_POST_ITEM.get())
                   && GuardPostValidator.INSTANCE.isValid(player.level(), frame)))
         {
             registeredBuilding = registerBuilding(player, frame, structureType(event.getItemStack()), structureName(event.getItemStack()), event);
@@ -241,9 +241,6 @@ public final class TechTopia2
         }
         else
         {
-            player.sendSystemMessage(Component.literal(
-                    displayName + " is valid, but it is outside the "
-                        + VillageData.VILLAGE_RADIUS + "-block radius of a Town Hall."));
             return false;
         }
     }
@@ -331,11 +328,13 @@ public final class TechTopia2
     {
         return switch (type)
         {
+            case "town_hall" -> TownHallValidator.INSTANCE.isValid(level, frame);
             case "barracks" -> BarracksValidator.INSTANCE.isValid(level, frame);
             case "butcher" -> ButcherValidator.INSTANCE.isValid(level, frame);
-            case "merchant_stall", "mineshaft", "rancher_pen", "guard_post" ->
-                    GuardPostValidator.INSTANCE.isValid(level, frame);
-            default -> TownHallValidator.INSTANCE.isValid(level, frame);
+            case "guard_post" -> GuardPostValidator.INSTANCE.isValid(level, frame);
+            case "home" -> HomeValidator.INSTANCE.isValid(level, frame);
+            case "kitchen" -> KitchenValidator.INSTANCE.isValid(level, frame);
+            default -> GeneralValidator.INSTANCE.isValid(level, frame);
         };
     }
 
@@ -357,49 +356,41 @@ public final class TechTopia2
                 || stack.is(TAVERN_ITEM.get());
     }
 
-    private boolean isSimpleMarkerItem(ItemStack stack)
+    public String structureType(ItemStack stack)
     {
-        return stack.is(MERCHANT_STALL_ITEM.get())
-                || stack.is(MINESHAFT_ITEM.get())
-                || stack.is(RANCHER_PEN_ITEM.get());
-    }
-
-    private boolean isRoomStructureItem(ItemStack stack)
-    {
-        return stack.is(HOMES_ITEM.get())
-                || stack.is(KITCHEN_ITEM.get())
-                || stack.is(LIBRARY_ITEM.get())
-                || stack.is(SCHOOL_ITEM.get())
-                || stack.is(SMITHY_ITEM.get())
-                || stack.is(STORAGE_ITEM.get())
-                || stack.is(TAVERN_ITEM.get());
-    }
-
-    private String structureType(ItemStack stack)
-    {
-        if (stack.is(HOMES_ITEM.get())) return "homes";
-        if (stack.is(KITCHEN_ITEM.get())) return "kitchen";
-        if (stack.is(LIBRARY_ITEM.get())) return "library";
-        if (stack.is(MERCHANT_STALL_ITEM.get())) return "merchant_stall";
-        if (stack.is(MINESHAFT_ITEM.get())) return "mineshaft";
-        if (stack.is(RANCHER_PEN_ITEM.get())) return "rancher_pen";
-        if (stack.is(SCHOOL_ITEM.get())) return "school";
-        if (stack.is(SMITHY_ITEM.get())) return "smithy";
-        if (stack.is(STORAGE_ITEM.get())) return "storage";
-        return "tavern";
+        return  stack.is(TOWN_HALL_ITEM.get()) ? "town_hall" :
+                stack.is(BARRACKS_ITEM.get()) ? "barracks" : 
+                stack.is(BUTCHER_ITEM.get()) ? "butcher" :
+                stack.is(GUARD_POST_ITEM.get()) ? "gaurd_post" :
+                stack.is(HOMES_ITEM.get()) ? "homes" :
+                stack.is(KITCHEN_ITEM.get()) ? "kitchen" :
+                stack.is(LIBRARY_ITEM.get()) ? "library" :
+                stack.is(MERCHANT_STALL_ITEM.get()) ? "merchant_stall" :
+                stack.is(MINESHAFT_ITEM.get()) ? "mineshaft" :
+                stack.is(RANCHER_PEN_ITEM.get()) ? "rancher_pen" :
+                stack.is(SCHOOL_ITEM.get()) ? "school" :
+                stack.is(SMITHY_ITEM.get()) ? "smithy" :
+                stack.is(STORAGE_ITEM.get()) ? "storage" :
+                stack.is(TAVERN_ITEM.get()) ? "tavern" 
+                /* defualt */               : "unknown";
     }
 
     private String structureName(ItemStack stack)
     {
-        if (stack.is(HOMES_ITEM.get())) return "Homes";
-        if (stack.is(KITCHEN_ITEM.get())) return "Kitchen";
-        if (stack.is(LIBRARY_ITEM.get())) return "Library";
-        if (stack.is(MERCHANT_STALL_ITEM.get())) return "Merchant Stall";
-        if (stack.is(MINESHAFT_ITEM.get())) return "Mineshaft";
-        if (stack.is(RANCHER_PEN_ITEM.get())) return "Rancher Pen";
-        if (stack.is(SCHOOL_ITEM.get())) return "School";
-        if (stack.is(SMITHY_ITEM.get())) return "Smithy";
-        if (stack.is(STORAGE_ITEM.get())) return "Storage";
-        return "Tavern";
+        return  stack.is(TOWN_HALL_ITEM.get()) ? "Town Hall" :
+                stack.is(BARRACKS_ITEM.get()) ? "Barracks" : 
+                stack.is(BUTCHER_ITEM.get()) ? "Butcher House" :
+                stack.is(GUARD_POST_ITEM.get()) ? "Gaurd Post" :        
+                stack.is(HOMES_ITEM.get()) ? "Homes" :
+                stack.is(KITCHEN_ITEM.get()) ? "Kitchen" :
+                stack.is(LIBRARY_ITEM.get()) ? "Library" :
+                stack.is(MERCHANT_STALL_ITEM.get()) ? "Merchant Stall" :
+                stack.is(MINESHAFT_ITEM.get()) ? "Mineshaft" :
+                stack.is(RANCHER_PEN_ITEM.get()) ? "Rancher Pen" :
+                stack.is(SCHOOL_ITEM.get()) ? "School" :
+                stack.is(SMITHY_ITEM.get()) ? "Smithy" :
+                stack.is(STORAGE_ITEM.get()) ? "Storage" :
+                stack.is(TAVERN_ITEM.get()) ? "Tavern" 
+                /* default */               : "Unknown";
     }
 }
