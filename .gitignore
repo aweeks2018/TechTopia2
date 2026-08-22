@@ -20,3 +20,5 @@ local.properties
 *.key
 repo/
 libs/
+run/options.txt
+run/usercache.json
