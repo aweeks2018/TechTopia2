@@ -74,6 +74,24 @@ public final class VillageData extends SavedData
         return true;
     }
 
+    public boolean deleteVillageContaining(BlockPos position)
+    {
+        for (int index = 0; index < villages.size(); index++)
+        {
+            Village village = villages.get(index);
+            if (village.townHall().distSqr(position)
+                    <= (long) VILLAGE_RADIUS * VILLAGE_RADIUS)
+            {
+                unregisteredBuildings.addAll(village.buildings());
+                villages.remove(index);
+                unregisteredBuildings.clear(); // This should only happen with the special command /delete_village
+                setDirty();
+                return true;
+            }
+        }
+        return false;
+    }
+
     private Optional<Village> findVillage(BlockPos position)
     {
         long radiusSquared = (long) VILLAGE_RADIUS * VILLAGE_RADIUS;

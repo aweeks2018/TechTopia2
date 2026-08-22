@@ -100,6 +100,29 @@ public final class TechTopia2
         LOGGER.info("TechTopia2 loaded");
     }
 
+    @SubscribeEvent
+    public void onRegisterCommands(RegisterCommandsEvent event)
+    {
+        // 1. delete_village command
+        event.getDispatcher().register(Commands.literal("techtopia")
+                .then(Commands.literal("delete_village")
+                        .executes(context ->
+                        {
+                            ServerPlayer player = context.getSource().getPlayerOrException();
+                            VillageData villageData = getVillageData(player.level());
+                            if (villageData.deleteVillageContaining(player.blockPosition()))
+                            {
+                                context.getSource().sendSuccess(
+                                        () -> Component.literal("Village deleted."), true);
+                                return 1;
+                            }
+
+                            context.getSource().sendFailure(Component.literal(
+                                    "You are not within the bounds of a registered village."));
+                            return 0;
+                        })));
+    }
+
     private void createAttributes(net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent event)
     {
         event.put(MALE_NOMAD.get(), NomadEntity.createAttributes().build());
