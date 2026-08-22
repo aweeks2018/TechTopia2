@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "techtopia2:item/tech_item"
+    "model": "techtopia2:item/town_hall"
   }
 }
