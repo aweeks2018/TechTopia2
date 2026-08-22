@@ -6,6 +6,6 @@ public final class ButcherValidator extends RoomValidator
 
     private ButcherValidator()
     {
-        super(4, 2, 30, 30);
+        super();
     }
 }

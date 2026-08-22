@@ -1,15 +1,20 @@
 package com.techtopia2;
 
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.level.Level;
 
-public final class GuardPostValidator extends RoomValidator
+public final class GuardPostValidator
 {
     public static final GuardPostValidator INSTANCE = new GuardPostValidator();
 
     private GuardPostValidator()
     {
-        super(4, 2, 30, 30);
     }
 
+    public boolean isValid(Level level, ItemFrame frame)
+    {
+        return level instanceof ServerLevel serverLevel
+                && VillageData.isWithinVillage(serverLevel, frame.blockPosition());
+    }
 }

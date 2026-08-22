@@ -9,15 +9,26 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.DoorBlock;
+import net.minecraft.server.level.ServerLevel;
 
 public abstract class RoomValidator
 {
     private static final int DEFAULT_MAXIMUM_FLOOR_SPACES = 500;
+    public static final int DEFAULT_MIN_FLOOR = 4;
+    public static final int DEFAULT_MIN_ROOF = 2;
+    public static final int DEFAULT_MAX_ROOF = 30;
+    public static final int DEFAULT_MAX_SEARCH = 30;
+
     private final int minimumFloorSpaces;
     private final int maximumFloorSpaces;
     private final int minimumHeight;
     private final int maximumHeight;
     private final int maximumSearchSize;
+
+    protected RoomValidator()
+    {
+        this(DEFAULT_MIN_FLOOR, DEFAULT_MIN_ROOF, DEFAULT_MAX_ROOF, DEFAULT_MAX_SEARCH); 
+    }
 
     protected RoomValidator(int minimumFloorSpaces, int minimumHeight, int maximumHeight, int maximumSearchSize)
     {
@@ -39,8 +50,21 @@ public abstract class RoomValidator
         this.maximumSearchSize = maximumSearchSize;
     }
 
+    // Subclasses will override this method instead
+    protected boolean checkCustomValidation(Level level, ItemFrame frame) 
+    {
+        return true; // Default behavior for base rooms
+    }
+
     public final boolean isValid(Level level, ItemFrame frame)
     {
+        if (requiresExistingVillage()
+                && level instanceof ServerLevel serverLevel
+                && !VillageData.isWithinVillage(serverLevel, frame.blockPosition()))
+        {
+            return false;
+        }
+
         Direction outward = frame.getDirection();
         BlockPos framePosition = frame.blockPosition();
         BlockPos supportBlock = framePosition.relative(outward.getOpposite());
@@ -61,10 +85,16 @@ public abstract class RoomValidator
         return roofHeight >= minimumHeight
                 && roofHeight <= maximumHeight
                 && hasDoor(level, floorSpaces, roofHeight)
-                && hasRoof(level, floorSpaces, roofHeight);
+                && hasRoof(level, floorSpaces, roofHeight)
+                && checkCustomValidation(level, frame);
     }
 
-    private BlockPos findFloorStart(Level level, BlockPos interiorStart)
+    protected boolean requiresExistingVillage()
+    {
+        return true;
+    }
+
+    protected BlockPos findFloorStart(Level level, BlockPos interiorStart)
     {
         for (int offset = 0; offset <= maximumHeight; offset++)
         {
@@ -77,7 +107,7 @@ public abstract class RoomValidator
         return null;
     }
 
-    private Set<BlockPos> findFloorSpaces(Level level, BlockPos start)
+    protected Set<BlockPos> findFloorSpaces(Level level, BlockPos start)
     {
         Set<BlockPos> floorSpaces = new HashSet<>();
         ArrayDeque<BlockPos> pending = new ArrayDeque<>();

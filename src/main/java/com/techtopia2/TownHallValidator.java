@@ -6,6 +6,12 @@ public final class TownHallValidator extends RoomValidator
 
     private TownHallValidator()
     {
-        super(4, 2, 30, 30);
+        super();
+    }
+
+    @Override
+    protected boolean requiresExistingVillage()
+    {
+        return false;
     }
 }
