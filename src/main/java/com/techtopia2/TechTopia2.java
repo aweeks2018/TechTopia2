@@ -39,26 +39,55 @@ public final class TechTopia2
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MOD_ID);
     public static final DeferredRegister.Entities ENTITIES = DeferredRegister.createEntities(MOD_ID);
 
-    public static final DeferredBlock<Block> TECH_BLOCK = BLOCKS.registerSimpleBlock(
-            "tech_block",
-            () -> BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(3.0F, 6.0F));
-    public static final DeferredItem<Item> TECH_ITEM = ITEMS.registerSimpleItem("tech_item");
-    public static final DeferredItem<Item> BARRACKS_ITEM = ITEMS.registerSimpleItem("barracks");
-    public static final DeferredItem<Item> BUTCHER_ITEM = ITEMS.registerSimpleItem("butcher");
-    public static final DeferredItem<Item> GUARD_POST_ITEM = ITEMS.registerSimpleItem("guard_post");
+    public static final DeferredItem<Item> TOWN_HALL_ITEM = ITEMS.registerSimpleItem(
+            "town_hall",
+            () -> new Item.Properties().stacksTo(1));
+    public static final DeferredItem<Item> BARRACKS_ITEM = ITEMS.registerSimpleItem(
+            "barracks",
+            () -> new Item.Properties().stacksTo(1));
+    public static final DeferredItem<Item> BUTCHER_ITEM = ITEMS.registerSimpleItem(
+            "butcher",
+            () -> new Item.Properties().stacksTo(1));
+    public static final DeferredItem<Item> GUARD_POST_ITEM = ITEMS.registerSimpleItem(
+            "guard_post",
+            () -> new Item.Properties().stacksTo(1));
+    public static final DeferredItem<Item> HOMES_ITEM = ITEMS.registerSimpleItem(
+            "homes",
+            () -> new Item.Properties().stacksTo(1));
+    public static final DeferredItem<Item> KITCHEN_ITEM = ITEMS.registerSimpleItem(
+            "kitchen",
+            () -> new Item.Properties().stacksTo(1));
+    public static final DeferredItem<Item> LIBRARY_ITEM = ITEMS.registerSimpleItem(
+            "library",
+            () -> new Item.Properties().stacksTo(1));
+    public static final DeferredItem<Item> MERCHANT_STALL_ITEM = ITEMS.registerSimpleItem(
+            "merchant_stall",
+            () -> new Item.Properties().stacksTo(1));
+    public static final DeferredItem<Item> MINESHAFT_ITEM = ITEMS.registerSimpleItem(
+            "mineshaft",
+            () -> new Item.Properties().stacksTo(1));
+    public static final DeferredItem<Item> RANCHER_PEN_ITEM = ITEMS.registerSimpleItem(
+            "rancher_pen",
+            () -> new Item.Properties().stacksTo(1));
+    public static final DeferredItem<Item> SCHOOL_ITEM = ITEMS.registerSimpleItem(
+            "school",
+            () -> new Item.Properties().stacksTo(1));
+    public static final DeferredItem<Item> SMITHY_ITEM = ITEMS.registerSimpleItem(
+            "smithy",
+            () -> new Item.Properties().stacksTo(1));
+    public static final DeferredItem<Item> STORAGE_ITEM = ITEMS.registerSimpleItem(
+            "storage",
+            () -> new Item.Properties().stacksTo(1));
+    public static final DeferredItem<Item> TAVERN_ITEM = ITEMS.registerSimpleItem(
+            "tavern",
+            () -> new Item.Properties().stacksTo(1));
+    
         public static final DeferredHolder<EntityType<?>, EntityType<MaleNomadEntity>> MALE_NOMAD =
             ENTITIES.registerEntityType("male_nomad", MaleNomadEntity::new, MobCategory.CREATURE, builder ->
                 builder.sized(0.6F, 1.8F));
         public static final DeferredHolder<EntityType<?>, EntityType<FemaleNomadEntity>> FEMALE_NOMAD =
             ENTITIES.registerEntityType("female_nomad", FemaleNomadEntity::new, MobCategory.CREATURE, builder ->
                 builder.sized(0.6F, 1.8F));
-
-    static
-    {
-        ITEMS.register("tech_block", key -> new BlockItem(
-                TECH_BLOCK.get(),
-            new Item.Properties().setId(ResourceKey.create(Registries.ITEM, key))));
-    }
 
     public TechTopia2(IEventBus modEventBus)
     {
