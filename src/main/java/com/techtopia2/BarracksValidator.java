@@ -17,6 +17,7 @@ public final class BarracksValidator extends RoomValidator
     public static final BarracksValidator INSTANCE = new BarracksValidator();
 
     public final String FAILED_CUSTOM_VALIDTAION_MSG = "Barracks not validated becauce of: ";
+    public String falureString = "";
 
     private BarracksValidator()
     {
@@ -46,12 +47,13 @@ public final class BarracksValidator extends RoomValidator
         {
             BlockPos blockPosAbove = blockPos.offset(0, 1, 0);
             BlockState blockAbove = level.getBlockState(blockPosAbove);
-            if(blockAbove.is(BlockTags.BEDS))
+            BlockState block = level.getBlockState(blockPos);
+            if(blockAbove.is(BlockTags.BEDS) || block.is(BlockTags.BEDS))
             {
                 hasBed = true;
             }
 
-            if(isArmorStand(level, blockPosAbove))
+            if(isArmorStand(level, blockPosAbove) || isArmorStand(level, blockPos))
             {
                 hasArmorStand = true;
             }
@@ -60,6 +62,11 @@ public final class BarracksValidator extends RoomValidator
             {
                 break;
             }
+        }
+
+        if (!(hasBed && hasArmorStand))
+        {
+            falureString = FAILED_CUSTOM_VALIDTAION_MSG + (!hasBed ? "\n\t - no bed detetced " : " ") + (!hasArmorStand ? "\n\t - no armor stand detetced " : "");
         }
 
         return hasBed && hasArmorStand;

@@ -24,6 +24,7 @@ import net.minecraft.world.entity.MobCategory;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.Level;
 import net.minecraft.commands.Commands;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -119,7 +120,8 @@ public final class TechTopia2
                         {
                             ServerPlayer player = context.getSource().getPlayerOrException();
                             VillageData villageData = getVillageData(player.level());
-                            if (villageData.deleteVillageContaining(player.blockPosition()))
+                            Level level = context.getSource().getLevel();
+                            if (villageData.deleteVillageContaining(player.blockPosition(), level, this))
                             {
                                 context.getSource().sendSuccess(
                                         () -> Component.literal("Village deleted."), true);
@@ -210,8 +212,15 @@ public final class TechTopia2
         }
         else if (event.getItemStack().is(BARRACKS_ITEM.get()))
         {
+            if (BarracksValidator.INSTANCE.falureString.isEmpty())
+            {
                 player.sendSystemMessage(Component.literal(
-                       structureName(event.getItemStack()) + " needs 4 floor spaces, a 2-30 block height, a roof, and a door."));
+                        structureName(event.getItemStack()) + " needs 4 floor spaces, a 2-30 block height, a roof, and a door."));
+            }
+            else
+            {
+                player.sendSystemMessage(Component.literal(BarracksValidator.INSTANCE.falureString));
+            }
         }
         else if (event.getItemStack().is(BUTCHER_ITEM.get()))
         {

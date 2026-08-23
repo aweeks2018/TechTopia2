@@ -37,7 +37,7 @@ public final class VillageData extends SavedData
             .apply(instance, Building::new));
 
     private static final Codec<Village> VILLAGE_CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            BlockPos.CODEC.fieldOf("townHall").forGetter(Village::townHall),
+            BUILDING_CODEC.fieldOf("townHall").forGetter(Village::townHall),
             Codec.list(BUILDING_CODEC).fieldOf("buildings").forGetter(Village::buildings))
             .apply(instance, Village::new));
             
@@ -76,15 +76,15 @@ public final class VillageData extends SavedData
         return !level.getEntitiesOfClass(ItemFrame.class, box).isEmpty();
     }
     
-    public void makeEnchanted(PlayerInteractEvent.EntityInteract event, boolean isEnchanted, Building building, TechTopia2 techTopia2)
+    public void makeEnchanted(Level level, boolean isEnchanted, Building building, TechTopia2 techTopia2)
     {
-        if(hasItemFrame(event.getLevel(), building.position))
+        if(hasItemFrame(level, building.position))
         {        
             
             LOGGER.debug("makeEnchanted......foundItem Frame");
 
             AABB box = new AABB(building.position);
-            for (ItemFrame itemFrame : event.getLevel().getEntitiesOfClass(ItemFrame.class, box))
+            for (ItemFrame itemFrame : level.getEntitiesOfClass(ItemFrame.class, box))
             {
                 if(!itemFrame.getItem().isEmpty() &&
                    techTopia2.isStructureItem(itemFrame.getItem()))
@@ -165,7 +165,7 @@ public final class VillageData extends SavedData
         {
             return false;
         }
-        villages.add(new Village(position, new ArrayList<>()));
+        villages.add(new Village(new Building(position, "town_hall"), new ArrayList<>()));
         makeEnchanted(event, true);
         
         setDirty();
@@ -181,9 +181,9 @@ public final class VillageData extends SavedData
         }
 
         Player player = event.getEntity();
-        Village target = village.get();
+        Village currentVillage = village.get();
 
-        for (Building building : target.buildings())
+        for (Building building : currentVillage.buildings())
         {
             if (building.position.equals(position))
             {
@@ -201,14 +201,14 @@ public final class VillageData extends SavedData
         }
 
         Building buildingToAdd = new Building(position, type);
-        target.buildings().add(buildingToAdd);
+        currentVillage.buildings().add(buildingToAdd);
 
         LOGGER.debug("registerBuilding......noyt stream()");
 
         // If the player is relocating a Town Hall then call the building agnistic serach to find a previosuly 
         if(player.getItemInHand(InteractionHand.MAIN_HAND).is(techTopia2.TOWN_HALL_ITEM))
         {
-            makeEnchanted(event, true, buildingToAdd, techTopia2);
+            makeEnchanted(event.getLevel(), true, buildingToAdd, techTopia2);
         }
         else
         {
@@ -225,19 +225,19 @@ public final class VillageData extends SavedData
         for (int index = 0; index < villages.size(); index++)
         {
             Village village = villages.get(index);
-            if (village.townHall().equals(position))
+            if (village.townHall().position().equals(position))
             {
                 unregisteredBuildings.addAll(village.buildings());
                 for (Building building : village.buildings())
                 {
-                    makeEnchanted(event, false, building, techTopia2);
+                    makeEnchanted(event.getLevel(), false, building, techTopia2);
                 }
                 makeEnchanted(event, false);
                 villages.remove(index);
                 setDirty();
                 return Optional.of("town_hall");
             }
-
+            
             Optional<Building> building = village.buildings().stream()
                     .filter(candidate -> candidate.position().equals(position))
                     .findFirst();
@@ -253,14 +253,21 @@ public final class VillageData extends SavedData
         return Optional.empty();
     }
 
-    public boolean deleteVillageContaining(BlockPos position)
+    public boolean deleteVillageContaining(BlockPos position, Level level, TechTopia2 techTopia2)
     {
         for (int index = 0; index < villages.size(); index++)
         {
             Village village = villages.get(index);
-            if (village.townHall().distSqr(position)
+            if (village.townHall().position().distSqr(position)
                     <= (long) VILLAGE_RADIUS * VILLAGE_RADIUS)
             {
+                for (Building building : village.buildings())
+                {
+                    makeEnchanted(level, false, building, techTopia2);
+                }
+
+                makeEnchanted(level, false, village.townHall, techTopia2);
+
                 unregisteredBuildings.addAll(village.buildings());
                 villages.remove(index);
                 unregisteredBuildings.clear(); // This should only happen with the special command /delete_village
@@ -296,15 +303,36 @@ public final class VillageData extends SavedData
     {
         long radiusSquared = (long) VILLAGE_RADIUS * VILLAGE_RADIUS;
         return villages.stream()
-                .filter(village -> village.townHall().distSqr(position) <= radiusSquared)
+                .filter(village -> village.townHall().position.distSqr(position) <= radiusSquared)
                 .findFirst();
     }
+
 
     public record Building(BlockPos position, String type)
     {
     }
 
-    public record Village(BlockPos townHall, List<Building> buildings)
+    public static final class Village 
     {
+        private final Building townHall;
+        private final List<Building> buildings;
+
+        // This constructor ensures that whenever Minecraft creates a Village,
+        // the list of buildings is forced into an unlocked ArrayList!
+        public Village(Building townHall, List<Building> buildings) 
+        {
+            this.townHall = townHall;
+            this.buildings = new ArrayList<>(buildings);
+        }
+
+        public Building townHall() 
+        {
+            return this.townHall;
+        }
+
+        public List<Building> buildings() 
+        {
+            return this.buildings;
+        }
     }
 }
