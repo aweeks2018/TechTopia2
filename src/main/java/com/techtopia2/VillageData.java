@@ -11,6 +11,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Vec3i;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -23,6 +24,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.minecraft.server.level.ServerLevel;
 
@@ -61,6 +63,11 @@ public final class VillageData extends SavedData
         this(new ArrayList<>(), new ArrayList<>());
     }
 
+    public static VillageData get(ServerLevel level)
+    {
+        return level.getDataStorage().computeIfAbsent(TYPE);
+    }
+
     private VillageData(List<Village> villages, List<Building> unregisteredBuildings)
     {
         this.villages = new ArrayList<>(villages);
@@ -80,7 +87,6 @@ public final class VillageData extends SavedData
     {
         if(hasItemFrame(level, building.position))
         {        
-            
             LOGGER.debug("makeEnchanted......foundItem Frame");
 
             AABB box = new AABB(building.position);
@@ -159,22 +165,35 @@ public final class VillageData extends SavedData
         }
     }
 
+    public void addVillage(ServerLevel level, Village village)
+    {
+        VillageData.get(level).villages.add(village);
+        setDirty();
+    }
+    
+    public void removeVillage(ServerLevel level, int villageIndex)
+    {
+        VillageData.get(level).villages.remove(villageIndex);
+        setDirty();
+    }
+
     public boolean registerTownHall(BlockPos position, PlayerInteractEvent.EntityInteract event)
     {
-        if (findVillage(position).isPresent())
+        if (findVillage(position, (ServerLevel)event.getLevel()).isPresent())
         {
             return false;
         }
-        villages.add(new Village(new Building(position, "town_hall"), new ArrayList<>()));
+
         makeEnchanted(event, true);
+
+        addVillage((ServerLevel)event.getLevel(), new Village(new Building(position, "town_hall"), new ArrayList<>()));
         
-        setDirty();
-        return true;    
+        return true;
     }
 
     public boolean registerBuilding(BlockPos position, String type, PlayerInteractEvent.EntityInteract event, TechTopia2 techTopia2)
     {
-        Optional<Village> village = findVillage(position);
+        Optional<Village> village = findVillage(position, (ServerLevel) event.getLevel());
         if (village.isEmpty())
         {
             return false;
@@ -222,9 +241,9 @@ public final class VillageData extends SavedData
 
     public Optional<String> unregisterStructure(BlockPos position, PlayerInteractEvent.EntityInteract event, TechTopia2 techTopia2)
     {
-        for (int index = 0; index < villages.size(); index++)
+        for (int index = 0; index < VillageData.get((ServerLevel)event.getLevel()).villages.size(); index++)
         {
-            Village village = villages.get(index);
+            Village village = VillageData.get((ServerLevel)event.getLevel()).villages.get(index);
             if (village.townHall().position().equals(position))
             {
                 unregisteredBuildings.addAll(village.buildings());
@@ -233,8 +252,9 @@ public final class VillageData extends SavedData
                     makeEnchanted(event.getLevel(), false, building, techTopia2);
                 }
                 makeEnchanted(event, false);
-                villages.remove(index);
-                setDirty();
+
+                removeVillage((ServerLevel)event.getLevel(), index);
+
                 return Optional.of("town_hall");
             }
             
@@ -255,9 +275,10 @@ public final class VillageData extends SavedData
 
     public boolean deleteVillageContaining(BlockPos position, Level level, TechTopia2 techTopia2)
     {
-        for (int index = 0; index < villages.size(); index++)
+        
+        for (int index = 0; index < VillageData.get((ServerLevel)level).villages.size(); index++)
         {
-            Village village = villages.get(index);
+            Village village = VillageData.get((ServerLevel)level).villages.get(index);
             if (village.townHall().position().distSqr(position)
                     <= (long) VILLAGE_RADIUS * VILLAGE_RADIUS)
             {
@@ -269,9 +290,11 @@ public final class VillageData extends SavedData
                 makeEnchanted(level, false, village.townHall, techTopia2);
 
                 unregisteredBuildings.addAll(village.buildings());
-                villages.remove(index);
+
+                removeVillage((ServerLevel)level, index);
+
                 unregisteredBuildings.clear(); // This should only happen with the special command /delete_village
-                setDirty();
+                
                 return true;
             }
         }
@@ -295,17 +318,38 @@ public final class VillageData extends SavedData
     {
         return level.getServer().getDataStorage()
                 .computeIfAbsent(TYPE)
-                .findVillage(position)
+                .findVillage(position, level)
                 .isPresent();
     }
 
-    private Optional<Village> findVillage(BlockPos position)
+    public Optional<Village> findVillage(BlockPos position, ServerLevel level)
     {
         long radiusSquared = (long) VILLAGE_RADIUS * VILLAGE_RADIUS;
-        return villages.stream()
+
+        for (Village village : VillageData.get(level).villages)
+        {
+            LOGGER.info("Village at: " + village.townHall.position().toString());
+        }
+
+        return VillageData.get(level).villages.stream()
                 .filter(village -> village.townHall().position.distSqr(position) <= radiusSquared)
                 .findFirst();
     }
+
+    public Optional<Village> findVillage(Vec3i position, ServerLevel level)
+    {
+        long radiusSquared = (long) VILLAGE_RADIUS * VILLAGE_RADIUS;
+
+        for (Village village : VillageData.get(level).villages)
+        {
+            LOGGER.info("Village at: " + village.townHall.position().toString());
+        }
+
+        return VillageData.get(level).villages.stream()
+                .filter(village -> village.townHall().position.distSqr(position) <= radiusSquared)
+                .findFirst();
+    }
+
 
 
     public record Building(BlockPos position, String type)
@@ -334,5 +378,6 @@ public final class VillageData extends SavedData
         {
             return this.buildings;
         }
+
     }
 }
