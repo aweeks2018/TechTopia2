@@ -1,8 +1,10 @@
-package com.techtopia2;
+package com.techtopia2.items.stuctures.validators;
 
 import java.util.ArrayDeque;
 import java.util.HashSet;
 import java.util.Set;
+
+import com.techtopia2.VillageData;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;

@@ -1,4 +1,14 @@
 package com.techtopia2;
+import com.techtopia2.entity.custom.FemaleNomadEntity;
+import com.techtopia2.entity.custom.MaleNomadEntity;
+import com.techtopia2.entity.custom.NomadEntity;
+import com.techtopia2.items.stuctures.validators.BarracksValidator;
+import com.techtopia2.items.stuctures.validators.ButcherValidator;
+import com.techtopia2.items.stuctures.validators.GeneralValidator;
+import com.techtopia2.items.stuctures.validators.GuardPostValidator;
+import com.techtopia2.items.stuctures.validators.HomeValidator;
+import com.techtopia2.items.stuctures.validators.KitchenValidator;
+import com.techtopia2.items.stuctures.validators.TownHallValidator;
 
 import org.slf4j.Logger;
 
@@ -10,6 +20,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items; // Add this line at the top
+import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.ItemStack;
@@ -95,6 +106,7 @@ public final class TechTopia2
     public static final DeferredHolder<EntityType<?>, EntityType<MaleNomadEntity>> MALE_NOMAD =
         ENTITIES.registerEntityType("male_nomad", MaleNomadEntity::new, MobCategory.CREATURE, builder ->
             builder.sized(0.6F, 1.8F));
+
     public static final DeferredHolder<EntityType<?>, EntityType<FemaleNomadEntity>> FEMALE_NOMAD =
         ENTITIES.registerEntityType("female_nomad", FemaleNomadEntity::new, MobCategory.CREATURE, builder ->
             builder.sized(0.6F, 1.8F));

@@ -1,4 +1,6 @@
-package com.techtopia2;
+package com.techtopia2.items.stuctures.validators;
+
+import com.techtopia2.VillageData;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.decoration.ItemFrame;

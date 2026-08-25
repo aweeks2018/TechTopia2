@@ -1,4 +1,4 @@
-package com.techtopia2;
+package com.techtopia2.items.stuctures.validators;
 
 public final class TownHallValidator extends RoomValidator
 {
