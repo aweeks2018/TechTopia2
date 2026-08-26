@@ -1,4 +1,4 @@
-package com.techtopia2.village;
+package com.techtopia2.data.village;
 
 import java.util.ArrayList;
 import java.util.List;

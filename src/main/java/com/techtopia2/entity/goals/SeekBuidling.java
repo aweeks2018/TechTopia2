@@ -5,9 +5,9 @@ import java.util.Optional;
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
-import com.techtopia2.village.VillageData;
-import com.techtopia2.village.Building;
-import com.techtopia2.village.Village;
+import com.techtopia2.data.village.Building;
+import com.techtopia2.data.village.Village;
+import com.techtopia2.data.village.VillageData;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;

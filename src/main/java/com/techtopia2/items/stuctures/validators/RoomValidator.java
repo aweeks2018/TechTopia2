@@ -4,7 +4,7 @@ import java.util.ArrayDeque;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.techtopia2.village.VillageData;
+import com.techtopia2.data.village.VillageData;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;

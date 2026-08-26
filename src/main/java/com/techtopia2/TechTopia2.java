@@ -1,4 +1,6 @@
 package com.techtopia2;
+import com.techtopia2.data.village.Building;
+import com.techtopia2.data.village.VillageData;
 import com.techtopia2.entity.custom.FemaleNomadEntity;
 import com.techtopia2.entity.custom.MaleNomadEntity;
 import com.techtopia2.entity.custom.NomadEntity;
@@ -9,8 +11,6 @@ import com.techtopia2.items.stuctures.validators.GuardPostValidator;
 import com.techtopia2.items.stuctures.validators.HomeValidator;
 import com.techtopia2.items.stuctures.validators.KitchenValidator;
 import com.techtopia2.items.stuctures.validators.TownHallValidator;
-import com.techtopia2.village.Building;
-import com.techtopia2.village.VillageData;
 
 import org.slf4j.Logger;
 

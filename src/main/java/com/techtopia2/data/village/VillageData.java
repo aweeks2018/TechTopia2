@@ -1,4 +1,4 @@
-package com.techtopia2.village;
+package com.techtopia2.data.village;
 
 import org.slf4j.Logger;
 
