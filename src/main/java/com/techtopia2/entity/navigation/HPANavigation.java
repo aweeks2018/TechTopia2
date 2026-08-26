@@ -30,6 +30,7 @@ public class HPANavigation extends GroundPathNavigation
         // - Find the cluster for startPos and targetPos
         // - Run your macro A* to get a list of high-level border nodes
         // - Convert those nodes into a vanilla net.minecraft.world.entity.ai.pathfinding.Path object
+        highLevelGraph = null;
         
         return null; // Return your constructed path here
     }

@@ -5,16 +5,15 @@ import java.util.Optional;
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
-import com.techtopia2.VillageData;
-import com.techtopia2.VillageData.Building;
-import com.techtopia2.VillageData.Village;
+import com.techtopia2.village.VillageData;
+import com.techtopia2.village.Building;
+import com.techtopia2.village.Village;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.goal.Goal;
-import net.minecraft.world.phys.Vec3;
 
 public class SeekBuidling extends Goal
 {
@@ -22,14 +21,11 @@ public class SeekBuidling extends Goal
     
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    protected final Mob mob;
-    //protected final Building building;
-    
+    protected final Mob mob;    
 
     public SeekBuidling(Mob mob)
     {
         this.mob = mob;
-        //this.building = building;
     }
 
     @Override
@@ -54,13 +50,12 @@ public class SeekBuidling extends Goal
         {
             this.delayCounter = 20; // Re-calculate path once every 20 ticks (1 second)
 
-            ServerLevel serverLevel = (ServerLevel)this.mob.level();
-            Vec3i mobPosVec3i = new Vec3i(this.mob.getBlockX(), this.mob.getBlockY(), this.mob.getBlockZ());
-            Optional<Village> nearestVillage = VillageData.get(serverLevel).findVillage(mobPosVec3i, serverLevel);
+            ServerLevel serverLevel = (ServerLevel)this.mob.level();            
+            BlockPos mobPos = this.mob.blockPosition(); 
+            Optional<Village> nearestVillage = VillageData.get(serverLevel).findVillage(mobPos, serverLevel);
+
             if (nearestVillage.isPresent())
             {
-                LOGGER.info("SeekBuilding Tick");
-
                 Building townHall = nearestVillage.get().townHall();
                 BlockPos targetPos = townHall.position();
                 var navigation = this.mob.getNavigation();
@@ -69,13 +64,13 @@ public class SeekBuidling extends Goal
                     targetPos.getX(), 
                     targetPos.getY(), 
                     targetPos.getZ(), 
-                    1.0
+                    0.50
                 );
             }
             else
             {
                 LOGGER.info("No nearest Village Present"); 
-                LOGGER.info("Block Position for Villager: " + mobPosVec3i.toString());
+                LOGGER.info("Block Position for Villager: " + mobPos.toString());
             }
         }
     }

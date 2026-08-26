@@ -9,6 +9,8 @@ import com.techtopia2.items.stuctures.validators.GuardPostValidator;
 import com.techtopia2.items.stuctures.validators.HomeValidator;
 import com.techtopia2.items.stuctures.validators.KitchenValidator;
 import com.techtopia2.items.stuctures.validators.TownHallValidator;
+import com.techtopia2.village.Building;
+import com.techtopia2.village.VillageData;
 
 import org.slf4j.Logger;
 
@@ -20,12 +22,8 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items; // Add this line at the top
-import net.minecraft.world.item.SpawnEggItem;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
@@ -37,14 +35,10 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.commands.Commands;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.state.BlockBehaviour;
-import net.minecraft.world.level.material.MapColor;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
-import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -133,7 +127,7 @@ public final class TechTopia2
                             ServerPlayer player = context.getSource().getPlayerOrException();
                             VillageData villageData = getVillageData(player.level());
                             Level level = context.getSource().getLevel();
-                            if (villageData.deleteVillageContaining(player.blockPosition(), level, this))
+                            if (villageData.forceDeleteAllVillages((ServerLevel)level, this))
                             {
                                 context.getSource().sendSuccess(
                                         () -> Component.literal("Village deleted."), true);
@@ -318,7 +312,7 @@ public final class TechTopia2
     private void reevaluateUnregisteredBuildings(ServerLevel level, PlayerInteractEvent.EntityInteract event)
     {
         VillageData villageData = getVillageData(level);
-        for (VillageData.Building building : villageData.getUnregisteredBuildings())
+        for (Building building : villageData.getUnregisteredBuildings())
         {
             ItemFrame frame = findFrame(level, building.position());
             if (frame == null

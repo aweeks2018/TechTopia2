@@ -1,16 +1,10 @@
 package com.techtopia2.entity.custom;
 
-import java.util.Optional;
-
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
-import com.techtopia2.VillageData;
-import com.techtopia2.VillageData.Village;
 import com.techtopia2.entity.goals.SeekBuidling;
 
-import net.minecraft.core.Vec3i;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -19,10 +13,8 @@ import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.PanicGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
-import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.Vec3;
 
 public abstract class NomadEntity extends PathfinderMob
 {
@@ -56,6 +48,8 @@ public abstract class NomadEntity extends PathfinderMob
         this.goalSelector.addGoal(4, new RandomLookAroundGoal(this));
 
         this.goalSelector.addGoal(4, new SeekBuidling(this));
+
+        LOGGER.info("registerGoals has finihed");
     }
 
 }
