@@ -10,7 +10,6 @@ import com.techtopia2.data.village.Village;
 import com.techtopia2.data.village.VillageData;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Vec3i;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.goal.Goal;

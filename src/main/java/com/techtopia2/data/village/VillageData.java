@@ -35,7 +35,7 @@ public final class VillageData extends SavedData
 
     private static final Codec<Building> BUILDING_CODEC = RecordCodecBuilder.create(instance -> instance.group(
             BlockPos.CODEC.fieldOf("position").forGetter(Building::position),
-            Codec.STRING.fieldOf("type").forGetter(Building::type))
+            StructureType.CODEC.fieldOf("type").forGetter(Building::type))
             .apply(instance, Building::new));
 
     private static final Codec<Village> VILLAGE_CODEC = RecordCodecBuilder.create(instance -> instance.group(
@@ -109,7 +109,7 @@ public final class VillageData extends SavedData
             for (ItemFrame itemFrame : level.getEntitiesOfClass(ItemFrame.class, box))
             {
                 if(!itemFrame.getItem().isEmpty() &&
-                   techTopia2.isStructureItem(itemFrame.getItem()))
+                   StructureType.isStructureItem(itemFrame.getItem()))
                 {
                     LOGGER.debug("makeEnchanted......!itemFrame.getItem().isEmpty()");
                     ItemStack itemInFrame = itemFrame.getItem();
@@ -202,14 +202,14 @@ public final class VillageData extends SavedData
 
         makeEnchanted(event, true);
 
-        Building newTownHall = new Building(position, "town_hall");
+        Building newTownHall = new Building(position, StructureType.TOWN_HALL);
         Village newVillage = new Village(newTownHall, new ArrayList<>());
         VillageData.get((ServerLevel) event.getLevel()).addVillage(newVillage);
         
         return true;
     }
 
-    public boolean registerBuilding(BlockPos position, String type, PlayerInteractEvent.EntityInteract event, TechTopia2 techTopia2)
+    public boolean registerBuilding(BlockPos position, StructureType type, PlayerInteractEvent.EntityInteract event, TechTopia2 techTopia2)
     {
         Optional<Village> village = findVillage(position, (ServerLevel) event.getLevel());
         if (village.isEmpty())
@@ -225,7 +225,7 @@ public final class VillageData extends SavedData
             if (building.position().equals(position))
             {
                 ItemStack item = player.getItemInHand(InteractionHand.MAIN_HAND);
-                if (!item.isEmpty() && techTopia2.isStructureItem(item) && techTopia2.structureType(item) == building.type() )
+                if (!item.isEmpty() && StructureType.isStructureItem(item) && StructureType.getStructureTypeFromItem(item) == building.type() )
                 {
                     player.sendSystemMessage(Component.literal("Original building type marker restored, no new building registered"));
                 }
@@ -257,7 +257,7 @@ public final class VillageData extends SavedData
         return true;
     }
 
-    public Optional<String> unregisterStructure(BlockPos position, PlayerInteractEvent.EntityInteract event, TechTopia2 techTopia2)
+    public Optional<StructureType> unregisterStructure(BlockPos position, PlayerInteractEvent.EntityInteract event, TechTopia2 techTopia2)
     {
         for (int index = 0; index < VillageData.get((ServerLevel)event.getLevel()).villages.size(); index++)
         {
@@ -273,7 +273,7 @@ public final class VillageData extends SavedData
 
                 VillageData.get((ServerLevel)event.getLevel()).removeVillage(index);
 
-                return Optional.of("town_hall");
+                return Optional.of(StructureType.TOWN_HALL);
             }
             
             Optional<Building> building = village.buildings().stream()

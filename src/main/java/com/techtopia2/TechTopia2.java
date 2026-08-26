@@ -1,15 +1,13 @@
 package com.techtopia2;
 import com.techtopia2.data.village.Building;
+import com.techtopia2.data.village.StructureType;
 import com.techtopia2.data.village.VillageData;
 import com.techtopia2.entity.custom.FemaleNomadEntity;
 import com.techtopia2.entity.custom.MaleNomadEntity;
 import com.techtopia2.entity.custom.NomadEntity;
 import com.techtopia2.items.stuctures.validators.BarracksValidator;
 import com.techtopia2.items.stuctures.validators.ButcherValidator;
-import com.techtopia2.items.stuctures.validators.GeneralValidator;
 import com.techtopia2.items.stuctures.validators.GuardPostValidator;
-import com.techtopia2.items.stuctures.validators.HomeValidator;
-import com.techtopia2.items.stuctures.validators.KitchenValidator;
 import com.techtopia2.items.stuctures.validators.TownHallValidator;
 
 import org.slf4j.Logger;
@@ -175,19 +173,21 @@ public final class TechTopia2
         // Only the server should validate and register the structure.
         if (event.getEntity().level().isClientSide()
                 || !(event.getTarget() instanceof ItemFrame)
-                || !isStructureItem(event.getItemStack()))
+                || !StructureType.isStructureItem(event.getItemStack()))
         {
             return;
         }
 
         Player player = event.getEntity();
         ItemFrame frame = (ItemFrame) event.getTarget();
+        
+        StructureType type = StructureType.getStructureTypeFromItem(event.getItemStack());
 
         // Town Hall creates a village; every other marker registers with an existing one.
         if (event.getItemStack().is(GUARD_POST_ITEM.get())
             && GuardPostValidator.INSTANCE.isValid(player.level(), frame))
         {
-            registeredBuilding = registerBuilding(player, frame, "guard_post", "Guard Post", event);
+            registeredBuilding = registerBuilding(player, frame, StructureType.GUARD_POST, "Guard Post", event);
         }
         else if (event.getItemStack().is(TOWN_HALL_ITEM.get())
             && TownHallValidator.INSTANCE.isValid(player.level(), frame))
@@ -214,14 +214,15 @@ public final class TechTopia2
                  (event.getItemStack().is(GUARD_POST_ITEM.get())
                   && GuardPostValidator.INSTANCE.isValid(player.level(), frame)))
         {
-            registeredBuilding = registerBuilding(player, frame, structureType(event.getItemStack()), structureName(event.getItemStack()), event);
+            registeredBuilding = registerBuilding(player, frame, type, type.displayName(), event);
         }
         else if (event.getItemStack().is(BARRACKS_ITEM.get()))
         {
             if (BarracksValidator.INSTANCE.falureString.isEmpty())
             {
-                player.sendSystemMessage(Component.literal(
-                        structureName(event.getItemStack()) + " needs 4 floor spaces, a 2-30 block height, a roof, and a door."));
+                player.sendSystemMessage(
+                    Component.literal(type.displayName() + 
+                    " needs 4 floor spaces, a 2-30 block height, a roof, and a door."));
             }
             else
             {
@@ -246,7 +247,7 @@ public final class TechTopia2
         }        
     }
 
-    private boolean registerBuilding(Player player, ItemFrame frame, String type, String displayName, PlayerInteractEvent.EntityInteract event)
+    private boolean registerBuilding(Player player, ItemFrame frame, StructureType type, String displayName, PlayerInteractEvent.EntityInteract event)
     {
         VillageData villageData = getVillageData((ServerLevel) player.level());
         if (villageData.registerBuilding(frame.blockPosition(), type, event, this))
@@ -265,7 +266,6 @@ public final class TechTopia2
         return level.getServer().getDataStorage().computeIfAbsent(VillageData.TYPE);
     }
 
-
     @SubscribeEvent
     public void onPlayerRightClickEntityWithDebugTool(PlayerInteractEvent.EntityInteract event)
     {
@@ -283,11 +283,11 @@ public final class TechTopia2
         if (player.getMainHandItem().is(Items.STICK))
         {
             VillageData villageData = getVillageData(level);
-            Optional<String> structureType = villageData.unregisterStructure(frame.blockPosition(), event, this);
+            Optional<StructureType> type = villageData.unregisterStructure(frame.blockPosition(), event, this);
 
-            if (structureType.isPresent())
+            if (type.isPresent())
             {
-                if (structureType.get().equals("town_hall"))
+                if (type.get().equals(StructureType.TOWN_HALL))
                 {
                     player.sendSystemMessage(Component.literal(
                         "Town Hall at " + frame.blockPosition().getX() + ", "
@@ -298,8 +298,8 @@ public final class TechTopia2
                 else
                 {
                     player.sendSystemMessage(Component.literal(
-                        structureType.get().substring(0, 1).toUpperCase()
-                            + structureType.get().substring(1)
+                        type.get().displayName().substring(0, 1).toUpperCase()
+                            + type.get().displayName().substring(1)
                             + " at " + frame.blockPosition().getX() + ", "
                             + frame.blockPosition().getY() + ", "
                             + frame.blockPosition().getZ()
@@ -316,7 +316,7 @@ public final class TechTopia2
         {
             ItemFrame frame = findFrame(level, building.position());
             if (frame == null
-                    || !isBuildingValid(level, frame, building.type())
+                    || !building.type().validator().isValid(level, frame)
                     || !VillageData.isWithinVillage(level, building.position()))
             {
                 continue;
@@ -333,79 +333,9 @@ public final class TechTopia2
     {
         return level.getEntitiesOfClass(ItemFrame.class, new AABB(position).inflate(1.0D),
                 frame -> frame.blockPosition().equals(position)
-                        && isStructureItem(frame.getItem()))
+                        && StructureType.isStructureItem(frame.getItem()))
                 .stream()
                 .findFirst()
                 .orElse(null);
-    }
-
-    private boolean isBuildingValid(ServerLevel level, ItemFrame frame, String type)
-    {
-        return switch (type)
-        {
-            case "town_hall" -> TownHallValidator.INSTANCE.isValid(level, frame);
-            case "barracks" -> BarracksValidator.INSTANCE.isValid(level, frame);
-            case "butcher" -> ButcherValidator.INSTANCE.isValid(level, frame);
-            case "guard_post" -> GuardPostValidator.INSTANCE.isValid(level, frame);
-            case "home" -> HomeValidator.INSTANCE.isValid(level, frame);
-            case "kitchen" -> KitchenValidator.INSTANCE.isValid(level, frame);
-            default -> GeneralValidator.INSTANCE.isValid(level, frame);
-        };
-    }
-
-    public boolean isStructureItem(ItemStack stack)
-    {
-        return stack.is(TOWN_HALL_ITEM.get())
-                || stack.is(BARRACKS_ITEM.get())
-                || stack.is(BUTCHER_ITEM.get())
-                || stack.is(GUARD_POST_ITEM.get())
-                || stack.is(HOMES_ITEM.get())
-                || stack.is(KITCHEN_ITEM.get())
-                || stack.is(LIBRARY_ITEM.get())
-                || stack.is(MERCHANT_STALL_ITEM.get())
-                || stack.is(MINESHAFT_ITEM.get())
-                || stack.is(RANCHER_PEN_ITEM.get())
-                || stack.is(SCHOOL_ITEM.get())
-                || stack.is(SMITHY_ITEM.get())
-                || stack.is(STORAGE_ITEM.get())
-                || stack.is(TAVERN_ITEM.get());
-    }
-
-    public String structureType(ItemStack stack)
-    {
-        return  stack.is(TOWN_HALL_ITEM.get()) ? "town_hall" :
-                stack.is(BARRACKS_ITEM.get()) ? "barracks" : 
-                stack.is(BUTCHER_ITEM.get()) ? "butcher" :
-                stack.is(GUARD_POST_ITEM.get()) ? "gaurd_post" :
-                stack.is(HOMES_ITEM.get()) ? "homes" :
-                stack.is(KITCHEN_ITEM.get()) ? "kitchen" :
-                stack.is(LIBRARY_ITEM.get()) ? "library" :
-                stack.is(MERCHANT_STALL_ITEM.get()) ? "merchant_stall" :
-                stack.is(MINESHAFT_ITEM.get()) ? "mineshaft" :
-                stack.is(RANCHER_PEN_ITEM.get()) ? "rancher_pen" :
-                stack.is(SCHOOL_ITEM.get()) ? "school" :
-                stack.is(SMITHY_ITEM.get()) ? "smithy" :
-                stack.is(STORAGE_ITEM.get()) ? "storage" :
-                stack.is(TAVERN_ITEM.get()) ? "tavern" 
-                /* defualt */               : "unknown";
-    }
-
-    private String structureName(ItemStack stack)
-    {
-        return  stack.is(TOWN_HALL_ITEM.get()) ? "Town Hall" :
-                stack.is(BARRACKS_ITEM.get()) ? "Barracks" : 
-                stack.is(BUTCHER_ITEM.get()) ? "Butcher House" :
-                stack.is(GUARD_POST_ITEM.get()) ? "Gaurd Post" :        
-                stack.is(HOMES_ITEM.get()) ? "Homes" :
-                stack.is(KITCHEN_ITEM.get()) ? "Kitchen" :
-                stack.is(LIBRARY_ITEM.get()) ? "Library" :
-                stack.is(MERCHANT_STALL_ITEM.get()) ? "Merchant Stall" :
-                stack.is(MINESHAFT_ITEM.get()) ? "Mineshaft" :
-                stack.is(RANCHER_PEN_ITEM.get()) ? "Rancher Pen" :
-                stack.is(SCHOOL_ITEM.get()) ? "School" :
-                stack.is(SMITHY_ITEM.get()) ? "Smithy" :
-                stack.is(STORAGE_ITEM.get()) ? "Storage" :
-                stack.is(TAVERN_ITEM.get()) ? "Tavern" 
-                /* default */               : "Unknown";
     }
 }
