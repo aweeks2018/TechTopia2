@@ -1,7 +1,9 @@
 package com.techtopia2.data.village;
 
 import java.util.Optional;
+import java.util.function.Predicate;
 
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
@@ -11,6 +13,9 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.targeting.TargetingConditions;
 import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -58,6 +63,72 @@ public class BuildingManager
             LOGGER.info("Structure {} was NOT resgistered", type.displayName());
         }
     }
+    
+    public boolean registerBuilding(Building building, ServerLevel level)
+    {
+        VillageManager villageManager = new VillageManager();
+        BlockPos position = building.position();
+        StructureType type = building.type();
+
+        if (type.equals(StructureType.TOWN_HALL))
+        {
+            return villageManager.registerTownHall(position, level);
+        }
+        else
+        {
+            VillageData data = VillageData.get(level);
+
+            Optional<Village> village = villageManager.findVillage(position, level);
+            if (village.isEmpty())
+            {
+                LOGGER.info("Could not find village");
+                return false;
+            }
+            
+            Village currentVillage = village.get();
+
+            for (Building currentBuilding : currentVillage.buildings())
+            {
+                if (currentBuilding.position().equals(position))
+                {
+                    LOGGER.info("Building already registered here");
+
+                    Player nearestPlayer = level.getNearestPlayer(
+                            position.getX(), 
+                            position.getY(), 
+                            position.getZ(), 
+                            1000.0D, 
+                            entity -> true // This matches any player without extra conditions
+                    );
+
+                    if (nearestPlayer != null) 
+                    {
+                        nearestPlayer.sendSystemMessage(Component.literal(
+                            "This building is already registered as another or the same building type")); 
+                    } 
+                    else 
+                    {
+                        LOGGER.info("This building is already registered as another or the same building type");
+                    }
+                    return false;
+                }
+            }
+              
+            Building buildingToAdd = new Building(position, type);
+            currentVillage.buildings().add(buildingToAdd);
+
+            // If the player is relocating a Town Hall then call the building agnistic serach to find a previosuly 
+            updateBuildingMarker(level, position, true);
+
+            data.unregisteredBuildings().removeIf(buildingToCheck -> buildingToCheck.position().equals(position));
+            data.setDirty();
+        }
+
+        return true;
+    }
+    
+
+
 
     private boolean registerBuilding(BlockPos position, StructureType type, Player player, ServerLevel level)
     {
@@ -85,7 +156,11 @@ public class BuildingManager
                 if (building.position().equals(position))
                 {
                     ItemStack item = player.getItemInHand(InteractionHand.MAIN_HAND);
-                    if (!item.isEmpty() && StructureType.isStructureItem(item) && StructureType.getStructureTypeFromItem(item) == building.type() )
+                    if (item.isEmpty())
+                    {
+                        return false;
+                    }
+                    else if (StructureType.isStructureItem(item) && StructureType.getStructureTypeFromItem(item) == building.type() )
                     {
                         player.sendSystemMessage(Component.literal("Original building type marker restored, no new building registered"));
                     }

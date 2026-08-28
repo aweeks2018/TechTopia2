@@ -2,6 +2,7 @@ package com.techtopia2.data.village;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -10,12 +11,14 @@ import com.mojang.logging.LogUtils;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 
 public class VillageManager 
 {
     public static final Logger LOGGER = LogUtils.getLogger();
-    public static final int VILLAGE_RADIUS = 1000;
+    public static final int VILLAGE_RADIUS = 250;
 
     public VillageManager()
     {
@@ -114,4 +117,133 @@ public class VillageManager
         LOGGER.info("!!! DANGER !!! All villages have been forcefully purged from the database.");
         return true;
     }
+
+
+    public void validateVillages(ServerLevel level)
+    {
+        VillageData data = VillageData.get(level);
+        BuildingManager buildingManager = new BuildingManager();
+
+        LOGGER.info("validateVillages triggered ... ");
+
+        List<Building> buildingsToUnregister = new ArrayList<>();
+
+        for (Village village : data.villages())
+        {
+            for (Building building : village.buildings())
+            {
+                for (ItemFrame itemFrame : level.getEntitiesOfClass(
+                        ItemFrame.class,
+                        new AABB(building.position())))
+                {
+                    if (StructureType.isStructureItem(itemFrame.getItem()))
+                    {
+                        StructureType frameType =
+                            StructureType.getStructureTypeFromItem(itemFrame.getItem());
+
+                        // Marker doesn't match registered building
+                        if (!frameType.equals(building.type()))
+                        {
+                            LOGGER.info(
+                                "The building marker for the {} at {} does not match the " +
+                                "type of the building registered. The current item frame " +
+                                "has the building type {}.",
+                                building.type().displayName(),
+                                building.position(),
+                                frameType.displayName()
+                            );
+
+                            buildingsToUnregister.add(building);
+                            continue;
+                        }
+
+                        // Building structure is invalid
+                        if (!building.type().validator().isValid(level, itemFrame))
+                        {
+                            LOGGER.info(
+                                "{} at {} was not valid. Unregistering building now ...",
+                                building.type().displayName(),
+                                building.position()
+                            );
+
+                            buildingsToUnregister.add(building);
+                        }
+                    }
+                    else
+                    {
+                        LOGGER.info(
+                            "{} at {} {}. Unregistering building now ...",
+                            building.type().displayName(),
+                            building.position(),
+                            itemFrame.getItem().isEmpty()
+                                ? "has an empty item frame"
+                                : "does not have a StructureType item in the frame"
+                        );
+
+                        buildingsToUnregister.add(building);
+                    }
+                }
+            }
+        }
+
+        // Modify the village data AFTER iteration is complete
+        for (Building building : buildingsToUnregister)
+        {
+            buildingManager.unregisterBuilding(building.position(), level);
+        }
+
+        List<Building> buildingsToRemoveFromUnregisteredBuildings = new ArrayList<>();
+
+        for (Building building : data.unregisteredBuildings())
+        {
+            if(isWithinAnyVillage(level, building.position()))
+            {
+                for (ItemFrame itemFrame : level.getEntitiesOfClass(
+                        ItemFrame.class,
+                        new AABB(building.position())))
+                {
+                    if (building.type().validator().isValid(level, itemFrame))
+                    {
+                        buildingsToRemoveFromUnregisteredBuildings.add(building);
+                    }
+                }
+            }
+        }
+
+        for (Building building : buildingsToRemoveFromUnregisteredBuildings)
+        {
+            buildingManager.registerBuilding(building, level);
+        }
+    }
 }
+
+
+/*
+for (ItemFrame itemFrame : level.getEntitiesOfClass(
+                        ItemFrame.class,
+                        new AABB(village.townHall().position())))
+            {
+                Building building = village.townHall();
+                if (StructureType.isStructureItem(itemFrame.getItem()))
+                {
+                    StructureType frameType = StructureType.getStructureTypeFromItem(itemFrame.getItem());
+
+                        // Marker doesn't match registered building
+                    if (!frameType.equals(building.type()))
+                    {
+                        LOGGER.info(
+                            "The building marker for the {} at {} does not match the " +
+                            "type of the building registered. The current item frame " +
+                            "has the building type {}.",
+                            building.type().displayName(),
+                            building.position(),
+                            frameType.displayName()
+                        );
+
+                        buildingsToUnregister.add(building);
+                        continue;
+                    }
+                }
+            }
+
+*/

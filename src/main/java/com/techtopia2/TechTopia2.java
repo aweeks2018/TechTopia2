@@ -2,6 +2,7 @@ package com.techtopia2;
 import com.techtopia2.entity.TechTopiaEntities;
 import com.techtopia2.event.BuildingEvents;
 import com.techtopia2.event.CommandEvents;
+import com.techtopia2.event.ServerTickEvents;
 import com.techtopia2.items.TechTopiaCreativeTab;
 import com.techtopia2.items.TechTopiaItems;
 
@@ -28,6 +29,7 @@ public final class TechTopia2
 
         NeoForge.EVENT_BUS.register(CommandEvents.class);
         NeoForge.EVENT_BUS.register(BuildingEvents.class);
+        NeoForge.EVENT_BUS.register(ServerTickEvents.class);
 
         LOGGER.info("TechTopia2 loaded");
     }

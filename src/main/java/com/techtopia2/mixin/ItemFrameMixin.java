@@ -31,7 +31,7 @@ public class ItemFrameMixin
         net.minecraft.world.phys.Vec3 location,
         CallbackInfoReturnable<net.minecraft.world.InteractionResult> cir)
     {
-        if (player.getMainHandItem().is(Items.STICK))
+        if (player.getMainHandItem().is(Items.STICK) || player.getMainHandItem().isEmpty())
         {
             return;
         }
@@ -42,19 +42,16 @@ public class ItemFrameMixin
 
         if (!(frame.level() instanceof ServerLevel level))
         {
-            LOGGER.info("onItemFrameInteract: Bad level");
             return;
         }
 
         if (item.isEmpty())
         {
-            LOGGER.info("onItemFrameInteract: Frame was empty");
             return;
         }
 
         if (!StructureType.isStructureItem(item))
         {
-            LOGGER.info("onItemFrameInteract: Item in frame was not a StructureType");
             return;
         }
 

@@ -34,7 +34,7 @@ public final class BuildingEvents
 
         Player player = event.getEntity();
 
-        if (!player.getMainHandItem().is(Items.STICK))
+        if (!player.getMainHandItem().is(Items.STICK) || player.getMainHandItem().isEmpty())
         {
             return;
         }
