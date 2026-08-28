@@ -5,6 +5,8 @@ import com.techtopia2.data.village.VillageManager;
 import com.techtopia2.entity.custom.FemaleNomadEntity;
 import com.techtopia2.entity.custom.MaleNomadEntity;
 import com.techtopia2.entity.custom.NomadEntity;
+import com.techtopia2.items.TechTopiaCreativeTab;
+import com.techtopia2.items.TechTopiaItems;
 
 import org.slf4j.Logger;
 
@@ -14,9 +16,7 @@ import java.util.Optional;
 
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items; // Add this line at the top
-import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.EntityType;
@@ -29,9 +29,7 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
-import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 
 @Mod(TechTopia2.MOD_ID)
 public final class TechTopia2
@@ -39,51 +37,7 @@ public final class TechTopia2
     public static final String MOD_ID = "techtopia2";
     public static final Logger LOGGER = LogUtils.getLogger();
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(MOD_ID);
-    public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MOD_ID);
     public static final DeferredRegister.Entities ENTITIES = DeferredRegister.createEntities(MOD_ID);
-
-    public static final DeferredItem<Item> TOWN_HALL_ITEM = ITEMS.registerSimpleItem(
-            "town_hall",
-            () -> new Item.Properties().stacksTo(1));
-    public static final DeferredItem<Item> BARRACKS_ITEM = ITEMS.registerSimpleItem(
-            "barracks",
-            () -> new Item.Properties().stacksTo(1));
-    public static final DeferredItem<Item> BUTCHER_ITEM = ITEMS.registerSimpleItem(
-            "butcher",
-            () -> new Item.Properties().stacksTo(1));
-    public static final DeferredItem<Item> GUARD_POST_ITEM = ITEMS.registerSimpleItem(
-            "guard_post",
-            () -> new Item.Properties().stacksTo(1));
-    public static final DeferredItem<Item> HOMES_ITEM = ITEMS.registerSimpleItem(
-            "homes",
-            () -> new Item.Properties().stacksTo(1));
-    public static final DeferredItem<Item> KITCHEN_ITEM = ITEMS.registerSimpleItem(
-            "kitchen",
-            () -> new Item.Properties().stacksTo(1));
-    public static final DeferredItem<Item> LIBRARY_ITEM = ITEMS.registerSimpleItem(
-            "library",
-            () -> new Item.Properties().stacksTo(1));
-    public static final DeferredItem<Item> MERCHANT_STALL_ITEM = ITEMS.registerSimpleItem(
-            "merchant_stall",
-            () -> new Item.Properties().stacksTo(1));
-    public static final DeferredItem<Item> MINESHAFT_ITEM = ITEMS.registerSimpleItem(
-            "mineshaft",
-            () -> new Item.Properties().stacksTo(1));
-    public static final DeferredItem<Item> RANCHER_PEN_ITEM = ITEMS.registerSimpleItem(
-            "rancher_pen",
-            () -> new Item.Properties().stacksTo(1));
-    public static final DeferredItem<Item> SCHOOL_ITEM = ITEMS.registerSimpleItem(
-            "school",
-            () -> new Item.Properties().stacksTo(1));
-    public static final DeferredItem<Item> SMITHY_ITEM = ITEMS.registerSimpleItem(
-            "smithy",
-            () -> new Item.Properties().stacksTo(1));
-    public static final DeferredItem<Item> STORAGE_ITEM = ITEMS.registerSimpleItem(
-            "storage",
-            () -> new Item.Properties().stacksTo(1));
-    public static final DeferredItem<Item> TAVERN_ITEM = ITEMS.registerSimpleItem(
-            "tavern",
-            () -> new Item.Properties().stacksTo(1));
     
     public static final DeferredHolder<EntityType<?>, EntityType<MaleNomadEntity>> MALE_NOMAD =
         ENTITIES.registerEntityType("male_nomad", MaleNomadEntity::new, MobCategory.CREATURE, builder ->
@@ -96,11 +50,15 @@ public final class TechTopia2
     public TechTopia2(IEventBus modEventBus)
     {
         BLOCKS.register(modEventBus);
-        ITEMS.register(modEventBus);
+        TechTopiaItems.ITEMS.register(modEventBus);
         ENTITIES.register(modEventBus);
-        modEventBus.addListener(this::addCreative);
+
+        TechTopiaCreativeTab.CREATIVE_TABS.register(modEventBus);
+
         modEventBus.addListener(this::createAttributes);
+
         NeoForge.EVENT_BUS.register(this);
+
         LOGGER.info("TechTopia2 loaded");
     }
 
@@ -131,27 +89,6 @@ public final class TechTopia2
     {
         event.put(MALE_NOMAD.get(), NomadEntity.createAttributes().build());
         event.put(FEMALE_NOMAD.get(), NomadEntity.createAttributes().build());
-    }
-
-    private void addCreative(BuildCreativeModeTabContentsEvent event)
-    {
-        if (event.getTabKey() == CreativeModeTabs.INGREDIENTS)
-        {
-            event.accept(TOWN_HALL_ITEM);
-            event.accept(BARRACKS_ITEM);
-            event.accept(BUTCHER_ITEM);
-            event.accept(GUARD_POST_ITEM);
-            event.accept(HOMES_ITEM);
-            event.accept(KITCHEN_ITEM);
-            event.accept(LIBRARY_ITEM);
-            event.accept(MERCHANT_STALL_ITEM);
-            event.accept(MINESHAFT_ITEM);
-            event.accept(RANCHER_PEN_ITEM);
-            event.accept(SCHOOL_ITEM);
-            event.accept(SMITHY_ITEM);
-            event.accept(STORAGE_ITEM);
-            event.accept(TAVERN_ITEM);
-        }
     }
 
     @SubscribeEvent
