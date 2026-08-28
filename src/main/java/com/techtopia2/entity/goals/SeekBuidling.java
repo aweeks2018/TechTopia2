@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 import com.mojang.logging.LogUtils;
 import com.techtopia2.data.village.Building;
 import com.techtopia2.data.village.Village;
-import com.techtopia2.data.village.VillageData;
+import com.techtopia2.data.village.VillageManager;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -51,7 +51,8 @@ public class SeekBuidling extends Goal
 
             ServerLevel serverLevel = (ServerLevel)this.mob.level();            
             BlockPos mobPos = this.mob.blockPosition(); 
-            Optional<Village> nearestVillage = VillageData.get(serverLevel).findVillage(mobPos, serverLevel);
+            VillageManager villageManager = new VillageManager();
+            Optional<Village> nearestVillage = villageManager.findVillage(mobPos, serverLevel);
 
             if (nearestVillage.isPresent())
             {

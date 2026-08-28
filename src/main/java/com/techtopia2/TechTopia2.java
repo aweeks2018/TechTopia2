@@ -1,7 +1,7 @@
 package com.techtopia2;
 import com.techtopia2.data.village.BuildingManager;
 import com.techtopia2.data.village.StructureType;
-import com.techtopia2.data.village.VillageData;
+import com.techtopia2.data.village.VillageManager;
 import com.techtopia2.entity.custom.FemaleNomadEntity;
 import com.techtopia2.entity.custom.MaleNomadEntity;
 import com.techtopia2.entity.custom.NomadEntity;
@@ -17,15 +17,12 @@ import net.neoforged.fml.common.Mod;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items; // Add this line at the top
 import net.minecraft.world.item.CreativeModeTabs;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.Level;
 import net.minecraft.commands.Commands;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.common.NeoForge;
@@ -115,10 +112,9 @@ public final class TechTopia2
                 .then(Commands.literal("delete_village")
                         .executes(context ->
                         {
-                            ServerPlayer player = context.getSource().getPlayerOrException();
                             ServerLevel level = (ServerLevel)context.getSource().getLevel();
-                            VillageData villageData = VillageData.get(level);
-                            if (villageData.forceDeleteAllVillages(level))
+                            VillageManager villageManager = new VillageManager();
+                            if (villageManager.forceDeleteAllVillages(level))
                             {
                                 context.getSource().sendSuccess(
                                         () -> Component.literal("Village deleted."), true);
@@ -181,8 +177,8 @@ public final class TechTopia2
            frame will remove the strcutre from the village */
         if (player.getMainHandItem().is(Items.STICK))
         {
-            VillageData data = VillageData.get(level);
-            Optional<StructureType> type = data.unregisterStructure(frame.blockPosition(), event);
+            BuildingManager buildingManager = new BuildingManager();
+            Optional<StructureType> type = buildingManager.unregisterBuilding(frame.blockPosition(), level);
 
             if (type.isPresent())
             {

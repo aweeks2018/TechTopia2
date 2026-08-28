@@ -7,7 +7,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
-import com.techtopia2.data.village.VillageData;
+import com.techtopia2.data.village.VillageManager;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -65,9 +65,11 @@ public abstract class RoomValidator
 
     public final boolean isValid(Level level, ItemFrame frame)
     {
+        VillageManager villageManager = new VillageManager();
+
         if (requiresExistingVillage()
              && level instanceof ServerLevel serverLevel
-             && !VillageData.isWithinAnyVillage(serverLevel, frame.blockPosition()))
+             && !villageManager.isWithinAnyVillage(serverLevel, frame.blockPosition()))
         {
             LOGGER.error("Building validation failed: item frame at {} is not located within an existing village.",
                     frame.blockPosition());

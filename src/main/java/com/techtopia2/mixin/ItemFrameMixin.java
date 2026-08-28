@@ -1,14 +1,11 @@
 package com.techtopia2.mixin;
 
-import com.techtopia2.data.village.VillageData;
 import com.techtopia2.data.village.BuildingManager;
 import com.techtopia2.data.village.StructureType;
 
 import com.mojang.logging.LogUtils;
 
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -38,7 +35,7 @@ public class ItemFrameMixin
         {
             return;
         }
-        
+
         ItemFrame frame = (ItemFrame)(Object)this;
 
         ItemStack item = frame.getItem();
