@@ -1,0 +1,11 @@
+{
+  "required": true,
+  "package": "com.techtopia2.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "mixins": [
+    "ItemFrameMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

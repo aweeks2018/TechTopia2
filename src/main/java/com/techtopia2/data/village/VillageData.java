@@ -60,10 +60,10 @@ public final class VillageData extends SavedData
 
     public VillageData()
     {
-        //this(new ArrayList<>(), new ArrayList<>());
         this.villages = new ArrayList<>();
         this.unregisteredBuildings = new ArrayList<>();
-        System.out.println("--- NEW WORLD FACTORY INITIALIZED (EMPTY STATE) ---");
+
+        LOGGER.info("--- NEW WORLD FACTORY INITIALIZED (EMPTY STATE) ---");
     }
 
     private VillageData(List<Village> villages, List<Building> unregisteredBuildings)
@@ -71,12 +71,13 @@ public final class VillageData extends SavedData
         this.villages = new ArrayList<>(villages);
         this.unregisteredBuildings = new ArrayList<>(unregisteredBuildings);
 
+        /* All of tyhe code below is just for logging */
         LOGGER.info("--- CODEC LOADED DATA ---");
         LOGGER.info("Villages count parsed from file: " + villages.size());
-
-
         LOGGER.info("VillageData Initialized! Total Saved Villages Loaded: " + this.villages.size());
-        for (Village v : this.villages) {
+
+        for (Village v : this.villages) 
+        {
             LOGGER.info(" -> Loaded Village at Town Hall: " + v.townHall().position().toString());
         }
     }
@@ -90,94 +91,26 @@ public final class VillageData extends SavedData
                     .getDataStorage()
                     .computeIfAbsent(TYPE);
     }
-
-    private boolean hasItemFrame(Level level, BlockPos pos) 
-    {
-        // Creates a bounding box covering the specific block position
-        AABB box = new AABB(pos);
-        
-        // Check if any ItemFrame exists within that block space
-        return !level.getEntitiesOfClass(ItemFrame.class, box).isEmpty();
-    }
     
-    public void makeEnchanted(Level level, boolean isEnchanted, Building building)
+    public void updateBuildingMarker(Level level, BlockPos position, boolean registeringNewBuidling)
     {
-        if(hasItemFrame(level, building.position()))
-        {        
-            LOGGER.debug("makeEnchanted......foundItem Frame");
-
-            AABB box = new AABB(building.position());
-            for (ItemFrame itemFrame : level.getEntitiesOfClass(ItemFrame.class, box))
-            {
-                if(!itemFrame.getItem().isEmpty() &&
-                   StructureType.isStructureItem(itemFrame.getItem()))
-                {
-                    LOGGER.debug("makeEnchanted......!itemFrame.getItem().isEmpty()");
-                    ItemStack itemInFrame = itemFrame.getItem();
-                    if (isEnchanted) 
-                    {
-                        // In 1.20.5+, use Data Components to explicitly enable the glint
-                        // If on an older version (1.20.4 or below), use itemInFrame.getOrCreateTag().putBoolean("Enchantments", true);
-                        itemInFrame.set(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true);
-                        LOGGER.debug("makeEnchantedLong......isEnchanted");
-                    } 
-                    else 
-                    {
-                        itemInFrame.remove(DataComponents.ENCHANTMENT_GLINT_OVERRIDE);
-                        LOGGER.debug("makeEnchantedLong......isEnchanted");
-                    }
-                    
-                    // Re-set the item so the ItemFrame updates and syncs with the client
-                    itemFrame.setItem(itemInFrame);
-                }
-            }
-        }
-    }
-
-    private void makeEnchanted(PlayerInteractEvent.EntityInteract event, boolean isEnchanted)
-    {
-        if (event.getTarget() instanceof ItemFrame itemFrame) 
+        for (ItemFrame itemFrame : level.getEntitiesOfClass(ItemFrame.class, new AABB(position)))
         {
-            Player player = event.getEntity();
-            ItemStack item = player.getMainHandItem().copy();
-            LOGGER.debug("makeEnchanted ");
-
-            if (!item.isEmpty()) 
+            ItemStack itemInFrame = itemFrame.getItem();
+            if (!itemInFrame.isEmpty() &&
+                StructureType.isStructureItem(itemInFrame))
             {
-                LOGGER.debug("makeEnchanted: !item.isEmpty()");
+                if(registeringNewBuidling)
+                {
+                    itemInFrame.set(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true);
+                }
+                else // Unregistering a building ... 
+                {
+                    itemInFrame.remove(DataComponents.ENCHANTMENT_GLINT_OVERRIDE);
+                }
 
-                if(!item.is(Items.STICK))
-                {
-                    if(isEnchanted)
-                    {
-                        item.set(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true); 
-                        LOGGER.debug("makeEnchanted: isEnchanted");
-                    }
-                    else
-                    {
-                        item.remove(DataComponents.ENCHANTMENT_GLINT_OVERRIDE);
-                        LOGGER.debug("makeEnchanted: !isEnchanted");
-                    }
-                    
-                    // Re-set the item so the ItemFrame updates and syncs with the client
-                    itemFrame.setItem(item);
-                }
-                else
-                {
-                    ItemStack itemInFrame = itemFrame.getItem();
-                    LOGGER.debug("STICK itemInFrame ");
-                    if(!itemInFrame.isEmpty())
-                    {
-                        itemInFrame.remove(DataComponents.ENCHANTMENT_GLINT_OVERRIDE);
-                       
-                        // Re-set the item so the ItemFrame updates and syncs with the client
-                        itemFrame.setItem(itemInFrame);
-                    }
-                }
-            }
-            else
-            {
-                LOGGER.debug("itemCopy......isEmpty()");
+                // Re-set the item so the ItemFrame updates and syncs with the client
+                itemFrame.setItem(itemInFrame);
             }
         }
     }
@@ -194,10 +127,9 @@ public final class VillageData extends SavedData
         setDirty();
     }
 
-    public boolean registerTownHall(BlockPos position, PlayerInteractEvent.EntityInteract event)
+    public boolean registerTownHall(BlockPos position, ServerLevel level)
     {
-        ServerLevel level = (ServerLevel)event.getLevel();
-        VillageData data =  get(level);
+        VillageData data = get(level);
 
         if (data.findVillage(position, level).isPresent())
         {
@@ -205,7 +137,7 @@ public final class VillageData extends SavedData
             return false;
         }
 
-        makeEnchanted(event, true);
+        updateBuildingMarker(level, position, true);
  
         Building newTownHall = new Building(position, StructureType.TOWN_HALL);
         Village newVillage = new Village(newTownHall, new ArrayList<>());
@@ -218,7 +150,8 @@ public final class VillageData extends SavedData
 
             if (VillageData.isWithinVillage(building.position(), level, newVillage))
             {
-                makeEnchanted(event.getLevel(), true, building);
+                updateBuildingMarker(level, building.position(), true);
+
                 LOGGER.info("Adding {} building to new village", building.type().displayName());
 
                 newVillage.buildings().add(building);
@@ -231,15 +164,14 @@ public final class VillageData extends SavedData
         return true;
     }
 
-    public boolean registerBuilding(BlockPos position, StructureType type, PlayerInteractEvent.EntityInteract event, TechTopia2 techTopia2)
+    public boolean registerBuilding(BlockPos position, StructureType type, Player player, ServerLevel level)
     {
         if (type.equals(StructureType.TOWN_HALL))
         {
-            return registerTownHall(position, event);
+            return registerTownHall(position, level);
         }
         else
         {
-            ServerLevel level = (ServerLevel)event.getLevel();
             VillageData data = get(level);
 
             Optional<Village> village = data.findVillage(position, level);
@@ -249,7 +181,6 @@ public final class VillageData extends SavedData
                 return false;
             }
 
-            Player player = event.getEntity();
             Village currentVillage = village.get();
 
             for (Building building : currentVillage.buildings())
@@ -273,7 +204,8 @@ public final class VillageData extends SavedData
             currentVillage.buildings().add(buildingToAdd);
 
             // If the player is relocating a Town Hall then call the building agnistic serach to find a previosuly 
-            makeEnchanted(event, true);
+            updateBuildingMarker(level, position, true);
+
 
             data.unregisteredBuildings.removeIf(building -> building.position().equals(position));
             setDirty();
@@ -292,12 +224,12 @@ public final class VillageData extends SavedData
             {
                 for (Building building : village.buildings())
                 {
-                    makeEnchanted(event.getLevel(), false, building);
+                    updateBuildingMarker(event.getLevel(), building.position(), false);
 
                     data.unregisteredBuildings.add(building);
                     LOGGER.info("Adding {} ID: {} to the unregisteredBuildings", building.type().displayName(), building.type().id());
                 }
-                makeEnchanted(event, false);
+                updateBuildingMarker(event.getLevel(), position, false);
 
                 data.removeVillage(index);
 
@@ -313,9 +245,10 @@ public final class VillageData extends SavedData
             {
                 village.buildings().remove(building.get());
                 data.unregisteredBuildings.add(building.get());
-                makeEnchanted(event, false);
+                updateBuildingMarker(event.getLevel(), building.get().position(), false);
+
                 setDirty();
-                LOGGER.info("building unregistered");
+                LOGGER.info("{} building unregistered", building.get().type().displayName());
                 return Optional.of(building.get().type());
             }
             LOGGER.info("not a buidling in the village ... ");
@@ -331,10 +264,10 @@ public final class VillageData extends SavedData
         // 1. Loop through and clear any block states / visual data if needed
         for (Village village : data.villages) 
         {
-            makeEnchanted(level, false, village.townHall());
-            for (Building b : village.buildings()) 
+            updateBuildingMarker(level, village.townHall().position(), false);
+            for (Building building : village.buildings()) 
             {
-                makeEnchanted(level, false, b);
+                updateBuildingMarker(level, building.position(), false);
             }
         }
         

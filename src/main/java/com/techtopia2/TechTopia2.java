@@ -1,4 +1,5 @@
 package com.techtopia2;
+import com.techtopia2.data.village.BuildingManager;
 import com.techtopia2.data.village.StructureType;
 import com.techtopia2.data.village.VillageData;
 import com.techtopia2.entity.custom.FemaleNomadEntity;
@@ -19,7 +20,6 @@ import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.network.chat.Component;
@@ -116,9 +116,9 @@ public final class TechTopia2
                         .executes(context ->
                         {
                             ServerPlayer player = context.getSource().getPlayerOrException();
-                            VillageData villageData = getVillageData(player.level());
-                            Level level = context.getSource().getLevel();
-                            if (villageData.forceDeleteAllVillages((ServerLevel)level))
+                            ServerLevel level = (ServerLevel)context.getSource().getLevel();
+                            VillageData villageData = VillageData.get(level);
+                            if (villageData.forceDeleteAllVillages(level))
                             {
                                 context.getSource().sendSuccess(
                                         () -> Component.literal("Village deleted."), true);
@@ -161,71 +161,21 @@ public final class TechTopia2
     @SubscribeEvent
     public void onItemFrameInteract(PlayerInteractEvent.EntityInteract event)
     {
-        boolean registeredBuilding = false; 
-        // Structure markers activate when a player places them into an item frame.
-        // Only the server should validate and register the structure.
-        if (event.getEntity().level().isClientSide() || 
-            !(event.getTarget() instanceof ItemFrame) ||
-            !StructureType.isStructureItem(event.getItemStack()))
+        // Ignore the client-side event.
+        if (!(event.getLevel() instanceof ServerLevel level))
         {
+            LOGGER.info("Bad level");
+            return;
+        }
+
+        // Only process ItemFrames.
+        if (!(event.getTarget() instanceof ItemFrame frame))
+        {
+            LOGGER.info("Bad frame");
             return;
         }
 
         Player player = event.getEntity();
-        ItemFrame frame = (ItemFrame) event.getTarget();
-        ItemStack item = event.getItemStack();
-        
-        StructureType type = StructureType.getStructureTypeFromItem(item);
-
-        if (type.validator().isValid(player.level(), frame))
-        {
-            LOGGER.error("validator successed");
-            registeredBuilding = registerBuilding(player, frame, type, type.displayName(), event);
-        }
-        else
-        {
-            LOGGER.error("validator fialed");
-        }
-
-        if (registeredBuilding)
-        {
-            // clear hand 
-            player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
-        }        
-    }
-
-    private boolean registerBuilding(Player player, ItemFrame frame, StructureType type, String displayName, PlayerInteractEvent.EntityInteract event)
-    {
-        VillageData villageData = getVillageData((ServerLevel) player.level());
-        if (villageData.registerBuilding(frame.blockPosition(), type, event, this))
-        {
-            player.sendSystemMessage(Component.literal(displayName + " structure registered to the village."));
-            return true;
-        }
-        else
-        {
-            LOGGER.info("Fail on registerBuilding");
-            return false;
-        }
-    }
-
-    private VillageData getVillageData(ServerLevel level)
-    {
-        return level.getServer().getDataStorage().computeIfAbsent(VillageData.TYPE);
-    }
-
-    @SubscribeEvent
-    public void onPlayerRightClickEntityWithDebugTool(PlayerInteractEvent.EntityInteract event)
-    {
-        Player player = event.getEntity();
-
-        /* base case we know we are not interacrting with the item we want  */
-        if (!(event.getLevel() instanceof ServerLevel level) ||
-            !(event.getTarget() instanceof ItemFrame frame))
-        {
-            LOGGER.info("Bad Level or no item frame");
-            return;
-        }
 
         /* Now check the players had for a stick and if it is a stick, rightclicking the item 
            frame will remove the strcutre from the village */
@@ -255,6 +205,10 @@ public final class TechTopia2
                             + " has been unregistered from the village."));
                 }
             } 
+
+            return;
         }
+ 
     }
+
 }

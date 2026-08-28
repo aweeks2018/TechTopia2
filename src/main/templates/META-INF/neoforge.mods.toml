@@ -8,6 +8,9 @@ description='''
 TechTopia2 starter mod.
 '''
 
+[[mixins]]
+config="techtopia2.mixins.json"
+
 [[dependencies.${mod_id}]]
 modId="neoforge"
 type="required"
