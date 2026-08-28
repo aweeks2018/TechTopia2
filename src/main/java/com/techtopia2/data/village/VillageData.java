@@ -3,6 +3,7 @@ package com.techtopia2.data.village;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 
@@ -99,7 +100,7 @@ public final class VillageData extends SavedData
         return !level.getEntitiesOfClass(ItemFrame.class, box).isEmpty();
     }
     
-    public void makeEnchanted(Level level, boolean isEnchanted, Building building, TechTopia2 techTopia2)
+    public void makeEnchanted(Level level, boolean isEnchanted, Building building)
     {
         if(hasItemFrame(level, building.position()))
         {        
@@ -195,225 +196,187 @@ public final class VillageData extends SavedData
 
     public boolean registerTownHall(BlockPos position, PlayerInteractEvent.EntityInteract event)
     {
-        if (findVillage(position, (ServerLevel)event.getLevel()).isPresent())
+        ServerLevel level = (ServerLevel)event.getLevel();
+        VillageData data =  get(level);
+
+        if (data.findVillage(position, level).isPresent())
         {
+            LOGGER.info("registerTownHall: Already inside a village");
             return false;
         }
 
         makeEnchanted(event, true);
-
+ 
         Building newTownHall = new Building(position, StructureType.TOWN_HALL);
         Village newVillage = new Village(newTownHall, new ArrayList<>());
-        VillageData.get((ServerLevel) event.getLevel()).addVillage(newVillage);
-        
+
+        Iterator<Building> iterator = data.unregisteredBuildings.iterator();
+
+        while (iterator.hasNext())
+        {
+            Building building = iterator.next();
+
+            if (VillageData.isWithinVillage(building.position(), level, newVillage))
+            {
+                makeEnchanted(event.getLevel(), true, building);
+                LOGGER.info("Adding {} building to new village", building.type().displayName());
+
+                newVillage.buildings().add(building);
+                iterator.remove();
+            }
+        }
+       
+        data.addVillage(newVillage);
+
         return true;
     }
 
     public boolean registerBuilding(BlockPos position, StructureType type, PlayerInteractEvent.EntityInteract event, TechTopia2 techTopia2)
     {
-        Optional<Village> village = findVillage(position, (ServerLevel) event.getLevel());
-        if (village.isEmpty())
+        if (type.equals(StructureType.TOWN_HALL))
         {
-            return false;
-        }
-
-        Player player = event.getEntity();
-        Village currentVillage = village.get();
-
-        for (Building building : currentVillage.buildings())
-        {
-            if (building.position().equals(position))
-            {
-                ItemStack item = player.getItemInHand(InteractionHand.MAIN_HAND);
-                if (!item.isEmpty() && StructureType.isStructureItem(item) && StructureType.getStructureTypeFromItem(item) == building.type() )
-                {
-                    player.sendSystemMessage(Component.literal("Original building type marker restored, no new building registered"));
-                }
-                else
-                {
-                    player.sendSystemMessage(Component.literal("This building is alreayd registered as a " + building.type() + " building. \nIf you want to unregister it, place the original item in the item frame \nand right click the item frame with a stick. "));
-                }
-                return false;
-            }
-        }
-
-        Building buildingToAdd = new Building(position, type);
-        currentVillage.buildings().add(buildingToAdd);
-
-        LOGGER.debug("registerBuilding......noyt stream()");
-
-        // If the player is relocating a Town Hall then call the building agnistic serach to find a previosuly 
-        if(player.getItemInHand(InteractionHand.MAIN_HAND).is(TechTopia2.TOWN_HALL_ITEM))
-        {
-            makeEnchanted(event.getLevel(), true, buildingToAdd, techTopia2);
+            return registerTownHall(position, event);
         }
         else
         {
-            makeEnchanted(event, true);
-        }
+            ServerLevel level = (ServerLevel)event.getLevel();
+            VillageData data = get(level);
 
-        unregisteredBuildings.removeIf(building -> building.position().equals(position));
-        setDirty();
+            Optional<Village> village = data.findVillage(position, level);
+            if (village.isEmpty())
+            {
+                LOGGER.info("Could not find village");
+                return false;
+            }
+
+            Player player = event.getEntity();
+            Village currentVillage = village.get();
+
+            for (Building building : currentVillage.buildings())
+            {
+                if (building.position().equals(position))
+                {
+                    ItemStack item = player.getItemInHand(InteractionHand.MAIN_HAND);
+                    if (!item.isEmpty() && StructureType.isStructureItem(item) && StructureType.getStructureTypeFromItem(item) == building.type() )
+                    {
+                        player.sendSystemMessage(Component.literal("Original building type marker restored, no new building registered"));
+                    }
+                    else
+                    {
+                        player.sendSystemMessage(Component.literal("This building is alreayd registered as a " + building.type() + " building. \nIf you want to unregister it, place the original item in the item frame \nand right click the item frame with a stick. "));
+                    }
+                    return false;
+                }
+            }
+
+            Building buildingToAdd = new Building(position, type);
+            currentVillage.buildings().add(buildingToAdd);
+
+            // If the player is relocating a Town Hall then call the building agnistic serach to find a previosuly 
+            makeEnchanted(event, true);
+
+            data.unregisteredBuildings.removeIf(building -> building.position().equals(position));
+            setDirty();
+        }
         return true;
     }
 
-    public Optional<StructureType> unregisterStructure(BlockPos position, PlayerInteractEvent.EntityInteract event, TechTopia2 techTopia2)
+    public Optional<StructureType> unregisterStructure(BlockPos position, PlayerInteractEvent.EntityInteract event)
     {
-        for (int index = 0; index < VillageData.get((ServerLevel)event.getLevel()).villages.size(); index++)
+        VillageData data = get((ServerLevel)event.getLevel());
+
+        for (int index = 0; index < data.villages.size(); index++)
         {
-            Village village = VillageData.get((ServerLevel)event.getLevel()).villages.get(index);
+            Village village = data.villages.get(index);
             if (village.townHall().position().equals(position))
             {
-                unregisteredBuildings.addAll(village.buildings());
                 for (Building building : village.buildings())
                 {
-                    makeEnchanted(event.getLevel(), false, building, techTopia2);
+                    makeEnchanted(event.getLevel(), false, building);
+
+                    data.unregisteredBuildings.add(building);
+                    LOGGER.info("Adding {} ID: {} to the unregisteredBuildings", building.type().displayName(), building.type().id());
                 }
                 makeEnchanted(event, false);
 
-                VillageData.get((ServerLevel)event.getLevel()).removeVillage(index);
+                data.removeVillage(index);
 
+                LOGGER.info("TOWN_HALL and village unregistered");
                 return Optional.of(StructureType.TOWN_HALL);
             }
             
+            LOGGER.info("not a townhall so lets see if its a building in the village ... ");
             Optional<Building> building = village.buildings().stream()
                     .filter(candidate -> candidate.position().equals(position))
                     .findFirst();
             if (building.isPresent())
             {
                 village.buildings().remove(building.get());
-                unregisteredBuildings.add(building.get());
+                data.unregisteredBuildings.add(building.get());
                 makeEnchanted(event, false);
                 setDirty();
+                LOGGER.info("building unregistered");
                 return Optional.of(building.get().type());
             }
+            LOGGER.info("not a buidling in the village ... ");
         }
+
         return Optional.empty();
     }
 
 
-    public boolean forceDeleteAllVillages(Level level, TechTopia2 techTopia2) 
+    public boolean forceDeleteAllVillages(Level level) 
     {
+        VillageData data = get((ServerLevel)level);
         // 1. Loop through and clear any block states / visual data if needed
-        for (Village village : this.villages) 
+        for (Village village : data.villages) 
         {
-            makeEnchanted(level, false, village.townHall(), techTopia2);
+            makeEnchanted(level, false, village.townHall());
             for (Building b : village.buildings()) 
             {
-                makeEnchanted(level, false, b, techTopia2);
+                makeEnchanted(level, false, b);
             }
         }
         
         // 2. Completely dump out the data pools
-        this.villages.clear();
-        this.unregisteredBuildings.clear();
+        data.villages.clear();
+        data.unregisteredBuildings.clear();
         
         // 3. Force save the cleared empty lists to the hard drive immediately
-        this.setDirty();
+        setDirty();
         LOGGER.info("!!! DANGER !!! All villages have been forcefully purged from the database.");
         return true;
     }
 
-    /*
-    public boolean deleteVillageContaining(BlockPos position, Level level, TechTopia2 techTopia2)
+    public static boolean isWithinAnyVillage(ServerLevel level, BlockPos position)
     {
-        
-        for (int index = 0; index < VillageData.get((ServerLevel)level).villages.size(); index++)
-        {
-            Village village = VillageData.get((ServerLevel)level).villages.get(index);
-            if (village.townHall().position().distSqr(position)
-                    <= (long) VILLAGE_RADIUS * VILLAGE_RADIUS)
-            {
-                for (Building building : village.buildings())
-                {
-                    makeEnchanted(level, false, building, techTopia2);
-                }
-
-                makeEnchanted(level, false, village.townHall(), techTopia2);
-
-                unregisteredBuildings.addAll(village.buildings());
-
-                removeVillage((ServerLevel)level, index);
-
-                unregisteredBuildings.clear(); // This should only happen with the special command /delete_village
-                
-                return true;
-            }
-        }
-        return false;
-    }
-
-     */
-
-    public List<Building> getUnregisteredBuildings()
-    {
-        return List.copyOf(unregisteredBuildings);
-    }
-
-    public void removeUnregisteredBuilding(Building building)
-    {
-        if (unregisteredBuildings.remove(building))
-        {
-            setDirty();
-        }
-    }
-
-    public static boolean isWithinVillage(ServerLevel level, BlockPos position)
-    {
-        return level.getServer().getDataStorage()
-                .computeIfAbsent(TYPE)
-                .findVillage(position, level)
+        VillageData data = get(level);
+        return data.findVillage(position, level)
                 .isPresent();
     }
 
-    // public Optional<Village> findVillage(BlockPos position, ServerLevel level)
-    // {
-    //     long radiusSquared = (long) VILLAGE_RADIUS * VILLAGE_RADIUS;
-
-    //     for (Village village : villages)
-    //     {
-    //         LOGGER.info("Village at: " + village.townHall().position().toString());
-    //     }
-
-    //     return villages.stream()
-    //             .filter(village -> village.townHall().position().distSqr(position) <= radiusSquared)
-    //             .findFirst();
-    // }
-
-    // public Optional<Village> findVillage(Vec3i position, ServerLevel level)
-    // {
-    //     long radiusSquared = (long) VILLAGE_RADIUS * VILLAGE_RADIUS;
-
-    //     for (Village village : villages)
-    //     {
-    //         LOGGER.info("Village at: " + village.townHall().position().toString());
-    //     }
-
-    //     return villages.stream()
-    //             .filter(village -> village.townHall().position().distSqr(position) <= radiusSquared)
-    //             .findFirst();
-    // }
-
-
-    public Optional<Village> findVillage(BlockPos position, ServerLevel level)
+    public static boolean isWithinVillage(BlockPos position, ServerLevel level, Village village)
     {
         // Force long casting to completely prevent any math integer overflows
         long radiusSquared = (long) VILLAGE_RADIUS * VILLAGE_RADIUS;
 
+        BlockPos hallPos = village.townHall().position();
+
+         // 1. Calculate the flat 2D distance offsets as long values
+        long dx = (long) hallPos.getX() - position.getX();
+        long dz = (long) hallPos.getZ() - position.getZ();
+        
+        // 2. Compute the 2D squared distance
+        long distance2D = (dx * dx) + (dz * dz);
+        
+        // 3. Return true if the entity is inside the 2D flat circle boundary
+        return distance2D <= radiusSquared;
+    }
+
+    public Optional<Village> findVillage(BlockPos position, ServerLevel level)
+    {
         return villages.stream()
-                .filter(village -> {
-                    BlockPos hallPos = village.townHall().position();
-                    
-                    // 1. Calculate the flat 2D distance offsets as long values
-                    long dx = (long) hallPos.getX() - position.getX();
-                    long dz = (long) hallPos.getZ() - position.getZ();
-                    
-                    // 2. Compute the 2D squared distance
-                    long distance2D = (dx * dx) + (dz * dz);
-                    
-                    // 3. Return true if the entity is inside the 2D flat circle boundary
-                    return distance2D <= radiusSquared;
-                })
+                .filter(village -> isWithinVillage(position, level, village))
                 .findFirst();
     }
 

@@ -1,14 +1,9 @@
 package com.techtopia2;
-import com.techtopia2.data.village.Building;
 import com.techtopia2.data.village.StructureType;
 import com.techtopia2.data.village.VillageData;
 import com.techtopia2.entity.custom.FemaleNomadEntity;
 import com.techtopia2.entity.custom.MaleNomadEntity;
 import com.techtopia2.entity.custom.NomadEntity;
-import com.techtopia2.items.stuctures.validators.BarracksValidator;
-import com.techtopia2.items.stuctures.validators.ButcherValidator;
-import com.techtopia2.items.stuctures.validators.GuardPostValidator;
-import com.techtopia2.items.stuctures.validators.TownHallValidator;
 
 import org.slf4j.Logger;
 
@@ -24,7 +19,6 @@ import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
@@ -41,7 +35,6 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
-import net.minecraft.core.BlockPos;
 
 @Mod(TechTopia2.MOD_ID)
 public final class TechTopia2
@@ -125,7 +118,7 @@ public final class TechTopia2
                             ServerPlayer player = context.getSource().getPlayerOrException();
                             VillageData villageData = getVillageData(player.level());
                             Level level = context.getSource().getLevel();
-                            if (villageData.forceDeleteAllVillages((ServerLevel)level, this))
+                            if (villageData.forceDeleteAllVillages((ServerLevel)level))
                             {
                                 context.getSource().sendSuccess(
                                         () -> Component.literal("Village deleted."), true);
@@ -226,10 +219,11 @@ public final class TechTopia2
     {
         Player player = event.getEntity();
 
-        /* base case we know we are not interacrting with the item we wnat  */
-        if (!(event.getLevel() instanceof ServerLevel level)
-                || !(event.getTarget() instanceof ItemFrame frame))
+        /* base case we know we are not interacrting with the item we want  */
+        if (!(event.getLevel() instanceof ServerLevel level) ||
+            !(event.getTarget() instanceof ItemFrame frame))
         {
+            LOGGER.info("Bad Level or no item frame");
             return;
         }
 
@@ -237,8 +231,8 @@ public final class TechTopia2
            frame will remove the strcutre from the village */
         if (player.getMainHandItem().is(Items.STICK))
         {
-            VillageData villageData = getVillageData(level);
-            Optional<StructureType> type = villageData.unregisterStructure(frame.blockPosition(), event, this);
+            VillageData data = VillageData.get(level);
+            Optional<StructureType> type = data.unregisterStructure(frame.blockPosition(), event);
 
             if (type.isPresent())
             {
@@ -262,35 +256,5 @@ public final class TechTopia2
                 }
             } 
         }
-    }
-
-    private void reevaluateUnregisteredBuildings(ServerLevel level, PlayerInteractEvent.EntityInteract event)
-    {
-        VillageData villageData = getVillageData(level);
-        for (Building building : villageData.getUnregisteredBuildings())
-        {
-            ItemFrame frame = findFrame(level, building.position());
-            if (frame == null
-                    || !building.type().validator().isValid(level, frame)
-                    || !VillageData.isWithinVillage(level, building.position()))
-            {
-                continue;
-            }
-
-            if (villageData.registerBuilding(building.position(), building.type(), event, this))
-            {
-                villageData.removeUnregisteredBuilding(building);
-            }
-        }
-    }
-
-    private ItemFrame findFrame(ServerLevel level, BlockPos position)
-    {
-        return level.getEntitiesOfClass(ItemFrame.class, new AABB(position).inflate(1.0D),
-                frame -> frame.blockPosition().equals(position)
-                        && StructureType.isStructureItem(frame.getItem()))
-                .stream()
-                .findFirst()
-                .orElse(null);
     }
 }
