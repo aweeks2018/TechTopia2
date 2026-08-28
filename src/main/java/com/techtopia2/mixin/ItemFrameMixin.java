@@ -3,14 +3,11 @@ package com.techtopia2.mixin;
 import com.techtopia2.data.village.BuildingManager;
 import com.techtopia2.data.village.StructureType;
 
-import com.mojang.logging.LogUtils;
-
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
-import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -18,9 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(ItemFrame.class)
 public class ItemFrameMixin
-{
-    private static final Logger LOGGER = LogUtils.getLogger();
-    
+{    
     @Inject(
         method = "interact",
         at = @At("RETURN")
