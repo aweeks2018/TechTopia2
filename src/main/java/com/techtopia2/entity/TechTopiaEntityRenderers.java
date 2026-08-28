@@ -18,14 +18,14 @@ import net.neoforged.api.distmarker.Dist;
 
 
 @EventBusSubscriber(modid = TechTopia2.MOD_ID, value = Dist.CLIENT)
-public final class ModEntities
+public final class TechTopiaEntityRenderers
 {
     private static final Identifier MALE_TEXTURE = Identifier.fromNamespaceAndPath(
             "minecraft", "textures/entity/villager/villager.png");
     private static final Identifier FEMALE_TEXTURE = Identifier.fromNamespaceAndPath(
             "minecraft", "textures/entity/villager/villager.png");
 
-    private ModEntities()
+    private TechTopiaEntityRenderers()
     {
 
     }
@@ -33,9 +33,9 @@ public final class ModEntities
     @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event)
     {
-        event.registerEntityRenderer(TechTopia2.MALE_NOMAD.get(), context ->
+        event.registerEntityRenderer(TechTopiaEntities.MALE_NOMAD.get(), context ->
             new NomadRenderer<MaleNomadEntity>(context, MALE_TEXTURE));
-        event.registerEntityRenderer(TechTopia2.FEMALE_NOMAD.get(), context ->
+        event.registerEntityRenderer(TechTopiaEntities.FEMALE_NOMAD.get(), context ->
             new NomadRenderer<FemaleNomadEntity>(context, FEMALE_TEXTURE));
     }
 

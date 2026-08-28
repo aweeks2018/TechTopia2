@@ -2,9 +2,7 @@ package com.techtopia2;
 import com.techtopia2.data.village.BuildingManager;
 import com.techtopia2.data.village.StructureType;
 import com.techtopia2.data.village.VillageManager;
-import com.techtopia2.entity.custom.FemaleNomadEntity;
-import com.techtopia2.entity.custom.MaleNomadEntity;
-import com.techtopia2.entity.custom.NomadEntity;
+import com.techtopia2.entity.TechTopiaEntities;
 import com.techtopia2.items.TechTopiaCreativeTab;
 import com.techtopia2.items.TechTopiaItems;
 
@@ -19,8 +17,6 @@ import net.neoforged.fml.common.Mod;
 import net.minecraft.world.item.Items; // Add this line at the top
 import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.MobCategory;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.commands.Commands;
@@ -28,34 +24,19 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
-import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.DeferredRegister;
 
 @Mod(TechTopia2.MOD_ID)
 public final class TechTopia2
 {
     public static final String MOD_ID = "techtopia2";
     public static final Logger LOGGER = LogUtils.getLogger();
-    public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(MOD_ID);
-    public static final DeferredRegister.Entities ENTITIES = DeferredRegister.createEntities(MOD_ID);
     
-    public static final DeferredHolder<EntityType<?>, EntityType<MaleNomadEntity>> MALE_NOMAD =
-        ENTITIES.registerEntityType("male_nomad", MaleNomadEntity::new, MobCategory.CREATURE, builder ->
-            builder.sized(0.6F, 1.8F));
-
-    public static final DeferredHolder<EntityType<?>, EntityType<FemaleNomadEntity>> FEMALE_NOMAD =
-        ENTITIES.registerEntityType("female_nomad", FemaleNomadEntity::new, MobCategory.CREATURE, builder ->
-            builder.sized(0.6F, 1.8F));
-
     public TechTopia2(IEventBus modEventBus)
     {
-        BLOCKS.register(modEventBus);
         TechTopiaItems.ITEMS.register(modEventBus);
-        ENTITIES.register(modEventBus);
+        TechTopiaEntities.ENTITIES.register(modEventBus);
 
         TechTopiaCreativeTab.CREATIVE_TABS.register(modEventBus);
-
-        modEventBus.addListener(this::createAttributes);
 
         NeoForge.EVENT_BUS.register(this);
 
@@ -83,12 +64,6 @@ public final class TechTopia2
                                     "You are not within the bounds of a registered village."));
                             return 0;
                         })));
-    }
-
-    private void createAttributes(net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent event)
-    {
-        event.put(MALE_NOMAD.get(), NomadEntity.createAttributes().build());
-        event.put(FEMALE_NOMAD.get(), NomadEntity.createAttributes().build());
     }
 
     @SubscribeEvent
