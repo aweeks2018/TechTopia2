@@ -171,73 +171,27 @@ public final class TechTopia2
         boolean registeredBuilding = false; 
         // Structure markers activate when a player places them into an item frame.
         // Only the server should validate and register the structure.
-        if (event.getEntity().level().isClientSide()
-                || !(event.getTarget() instanceof ItemFrame)
-                || !StructureType.isStructureItem(event.getItemStack()))
+        if (event.getEntity().level().isClientSide() || 
+            !(event.getTarget() instanceof ItemFrame) ||
+            !StructureType.isStructureItem(event.getItemStack()))
         {
             return;
         }
 
         Player player = event.getEntity();
         ItemFrame frame = (ItemFrame) event.getTarget();
+        ItemStack item = event.getItemStack();
         
-        StructureType type = StructureType.getStructureTypeFromItem(event.getItemStack());
+        StructureType type = StructureType.getStructureTypeFromItem(item);
 
-        // Town Hall creates a village; every other marker registers with an existing one.
-        if (event.getItemStack().is(GUARD_POST_ITEM.get())
-            && GuardPostValidator.INSTANCE.isValid(player.level(), frame))
+        if (type.validator().isValid(player.level(), frame))
         {
-            registeredBuilding = registerBuilding(player, frame, StructureType.GUARD_POST, "Guard Post", event);
-        }
-        else if (event.getItemStack().is(TOWN_HALL_ITEM.get())
-            && TownHallValidator.INSTANCE.isValid(player.level(), frame))
-        {
-            VillageData villageData = getVillageData((ServerLevel) player.level());
-            if (villageData.registerTownHall(frame.blockPosition(), event))
-            {
-                reevaluateUnregisteredBuildings((ServerLevel) player.level(), event);
-                player.sendSystemMessage(Component.literal(
-                    "Town Hall recognized. A new village was registered with a "
-                        + VillageData.VILLAGE_RADIUS + "-block radius."));
-                registeredBuilding = true; 
-            }
-            else
-            {
-                player.sendSystemMessage(Component.literal(
-                        "Town Hall recognized. It is already inside a registered village."));
-            }
-        }
-        else if ((event.getItemStack().is(BARRACKS_ITEM.get())
-                  && BarracksValidator.INSTANCE.isValid(player.level(), frame)) ||
-                 (event.getItemStack().is(BUTCHER_ITEM.get())
-                  && ButcherValidator.INSTANCE.isValid(player.level(), frame)) ||
-                 (event.getItemStack().is(GUARD_POST_ITEM.get())
-                  && GuardPostValidator.INSTANCE.isValid(player.level(), frame)))
-        {
+            LOGGER.error("validator successed");
             registeredBuilding = registerBuilding(player, frame, type, type.displayName(), event);
-        }
-        else if (event.getItemStack().is(BARRACKS_ITEM.get()))
-        {
-            if (BarracksValidator.INSTANCE.falureString.isEmpty())
-            {
-                player.sendSystemMessage(
-                    Component.literal(type.displayName() + 
-                    " needs 4 floor spaces, a 2-30 block height, a roof, and a door."));
-            }
-            else
-            {
-                player.sendSystemMessage(Component.literal(BarracksValidator.INSTANCE.falureString));
-            }
-        }
-        else if (event.getItemStack().is(BUTCHER_ITEM.get()))
-        {
-                player.sendSystemMessage(Component.literal(
-                    "Butcher needs 4 floor spaces, a 2-30 block height, a roof, and a door."));
         }
         else
         {
-            player.sendSystemMessage(Component.literal(
-                    "Town Hall needs 4 floor spaces, a 2-30 block height, a roof, and a door."));
+            LOGGER.error("validator fialed");
         }
 
         if (registeredBuilding)
@@ -257,6 +211,7 @@ public final class TechTopia2
         }
         else
         {
+            LOGGER.info("Fail on registerBuilding");
             return false;
         }
     }
