@@ -1,5 +1,4 @@
 {
-  "block.techtopia2.tech_block": "Tech Block",
   "item.techtopia2.town_hall": "Town Hall",
   "item.techtopia2.barracks": "Barracks",
   "item.techtopia2.butcher": "Butcher",
@@ -14,6 +13,9 @@
   "item.techtopia2.smithy": "Smithy",
   "item.techtopia2.storage": "Storage",
   "item.techtopia2.tavern": "Tavern",
+
   "entity.techtopia2.male_nomad": "Male Nomad",
-  "entity.techtopia2.female_nomad": "Female Nomad"
+  "entity.techtopia2.female_nomad": "Female Nomad",
+  
+  "itemGroup.techtopia": "TechTopia 2"
 }
