@@ -4,6 +4,9 @@ import java.util.ArrayDeque;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.slf4j.Logger;
+
+import com.mojang.logging.LogUtils;
 import com.techtopia2.data.village.VillageData;
 
 import net.minecraft.core.BlockPos;
@@ -15,6 +18,8 @@ import net.minecraft.server.level.ServerLevel;
 
 public abstract class RoomValidator
 {
+    public static final Logger LOGGER = LogUtils.getLogger();
+    
     private static final int DEFAULT_MAXIMUM_FLOOR_SPACES = 500;
     public static final int DEFAULT_MIN_FLOOR = 4;
     public static final int DEFAULT_MIN_ROOF = 2;
@@ -61,9 +66,11 @@ public abstract class RoomValidator
     public final boolean isValid(Level level, ItemFrame frame)
     {
         if (requiresExistingVillage()
-                && level instanceof ServerLevel serverLevel
-                && !VillageData.isWithinVillage(serverLevel, frame.blockPosition()))
+             && level instanceof ServerLevel serverLevel
+             && !VillageData.isWithinAnyVillage(serverLevel, frame.blockPosition()))
         {
+            LOGGER.error("Building validation failed: item frame at {} is not located within an existing village.",
+                    frame.blockPosition());
             return false;
         }
 
@@ -72,23 +79,77 @@ public abstract class RoomValidator
         BlockPos supportBlock = framePosition.relative(outward.getOpposite());
         BlockPos interiorStart = supportBlock.relative(outward.getOpposite());
         BlockPos floorStart = findFloorStart(level, interiorStart);
+
         if (floorStart == null)
         {
+            LOGGER.error("Building validation failed: could not find a valid floor starting from {}.",
+                    interiorStart);
             return false;
         }
+
         Set<BlockPos> floorSpaces = findFloorSpaces(level, floorStart);
 
-        if (floorSpaces.size() < minimumFloorSpaces || !hasSingleFloorLevel(floorSpaces))
+        if (floorSpaces.size() < minimumFloorSpaces)
         {
+            LOGGER.error(
+                    "Building validation failed: insufficient floor space. Found {} floor spaces, but at least {} are required.",
+                    floorSpaces.size(),
+                    minimumFloorSpaces);
+            return false;
+        }
+
+        if (!hasSingleFloorLevel(floorSpaces))
+        {
+            LOGGER.error(
+                    "Building validation failed: floor spaces are not all located at the same vertical level.");
             return false;
         }
 
         int roofHeight = findRoofHeight(level, floorSpaces);
-        return roofHeight >= minimumHeight
-                && roofHeight <= maximumHeight
-                && hasDoor(level, floorSpaces, roofHeight)
-                && hasRoof(level, floorSpaces, roofHeight)
-                && checkCustomValidation(level, frame);
+
+        if (roofHeight < minimumHeight)
+        {
+            LOGGER.error(
+                    "Building validation failed: building height is too low. Roof height is {}, but minimum height is {}.",
+                    roofHeight,
+                    minimumHeight);
+            return false;
+        }
+
+        if (roofHeight > maximumHeight)
+        {
+            LOGGER.error(
+                    "Building validation failed: building height is too high. Roof height is {}, but maximum height is {}.",
+                    roofHeight,
+                    maximumHeight);
+            return false;
+        }
+
+        if (!hasDoor(level, floorSpaces, roofHeight))
+        {
+            LOGGER.error(
+                    "Building validation failed: no valid door was found at the expected building height of {}.",
+                    roofHeight);
+            return false;
+        }
+
+        if (!hasRoof(level, floorSpaces, roofHeight))
+        {
+            LOGGER.error(
+                    "Building validation failed: no valid roof was found at height {}.",
+                    roofHeight);
+            return false;
+        }
+
+        if (!checkCustomValidation(level, frame))
+        {
+            LOGGER.error(
+                    "Building validation failed: custom structure validation rejected the building at {}.",
+                    framePosition);
+            return false;
+        }
+
+        return true;
     }
 
     protected boolean requiresExistingVillage()
